@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 42 30% 97%;
+    --foreground: 222 35% 13%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 35% 13%;
+    --primary: 196 88% 28%;
+    --primary-foreground: 180 25% 96%;
+    --secondary: 145 38% 92%;
+    --secondary-foreground: 156 55% 18%;
+    --muted: 42 30% 93%;
+    --muted-foreground: 220 15% 38%;
+    --accent: 38 96% 65%;
+    --accent-foreground: 24 42% 18%;
+    --destructive: 2 77% 56%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 210 20% 84%;
+    --input: 210 20% 90%;
+    --ring: 196 88% 38%;
+    --radius: 1rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply min-h-screen bg-background text-foreground antialiased;
+    font-family: var(--font-body), sans-serif;
+    background-image:
+      radial-gradient(circle at top left, rgba(251, 191, 36, 0.18), transparent 28%),
+      radial-gradient(circle at top right, rgba(6, 182, 212, 0.15), transparent 28%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(247, 244, 237, 1));
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display), sans-serif;
+    letter-spacing: -0.03em;
+  }
+}
+
+@layer utilities {
+  .panel-sheen {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .panel-sheen::before {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(125deg, rgba(255, 255, 255, 0.18), transparent 45%);
+    content: "";
+    pointer-events: none;
+  }
+}
