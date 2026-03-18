@@ -8,10 +8,10 @@ function startOfMonth(date = new Date()) {
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1, 0, 0, 0));
 }
 
-export async function getMonthlySpentUsd(userId: string) {
+export async function getMonthlySpentUsd(organizationId: string) {
   const aggregate = await prisma.paymentReceipt.aggregate({
     where: {
-      agentRun: { userId },
+      agentRun: { organizationId },
       status: ReceiptStatus.COMPLETED,
       createdAt: { gte: startOfMonth() }
     },
@@ -23,10 +23,10 @@ export async function getMonthlySpentUsd(userId: string) {
   return aggregate._sum.amountUsd ? aggregate._sum.amountUsd.toNumber() : 0;
 }
 
-export async function getBudgetSnapshot(policy: TreasuryPolicy, settings: IntegrationSettings, userId: string) {
+export async function getBudgetSnapshot(policy: TreasuryPolicy, settings: IntegrationSettings, organizationId: string) {
   const adapter = getLocusAdapter(settings.locusMode);
-  const managedWalletRef = settings.managedWalletRef ?? (await adapter.createManagedWalletRef(userId));
-  const spentThisMonthUsd = await getMonthlySpentUsd(userId);
+  const managedWalletRef = settings.managedWalletRef ?? (await adapter.createManagedWalletRef(organizationId));
+  const spentThisMonthUsd = await getMonthlySpentUsd(organizationId);
 
   const snapshot = await adapter.getBudgetSnapshot({
     managedWalletRef,
@@ -48,7 +48,7 @@ export async function getBudgetSnapshot(policy: TreasuryPolicy, settings: Integr
 
 export async function purchasePremiumAnalytics(input: {
   agentRunId: string;
-  userId: string;
+  organizationId: string;
   policy: TreasuryPolicy;
   settings: IntegrationSettings;
   provider: string;
@@ -58,7 +58,7 @@ export async function purchasePremiumAnalytics(input: {
   metadata?: Record<string, unknown>;
 }) {
   const adapter = getLocusAdapter(input.settings.locusMode);
-  const budgetSnapshot = await getBudgetSnapshot(input.policy, input.settings, input.userId);
+  const budgetSnapshot = await getBudgetSnapshot(input.policy, input.settings, input.organizationId);
   const result = await adapter.purchaseData({
     provider: input.provider,
     purpose: input.purpose,
@@ -86,7 +86,7 @@ export async function purchasePremiumAnalytics(input: {
               : ReceiptStatus.FAILED,
       externalTxId: result.externalTxId,
       reason: result.reason,
-      metadata: result.metadata ?? Prisma.JsonNull
+      metadata: (result.metadata as Prisma.InputJsonValue | undefined) ?? Prisma.JsonNull
     }
   });
 
@@ -97,11 +97,11 @@ export async function purchasePremiumAnalytics(input: {
   };
 }
 
-export async function listReceiptsForUser(userId: string, limit = 20) {
+export async function listReceiptsForOrganization(organizationId: string, limit = 20) {
   const receipts = await prisma.paymentReceipt.findMany({
     where: {
       agentRun: {
-        userId
+        organizationId
       }
     },
     include: {

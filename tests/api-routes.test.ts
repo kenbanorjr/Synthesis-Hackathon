@@ -20,17 +20,28 @@ vi.mock("@/lib/services/demo-seed-service", () => ({
   seedDemoWorkspace: vi.fn().mockResolvedValue(undefined)
 }));
 
-vi.mock("@prisma/client", () => ({
-  PrismaClient: vi.fn().mockImplementation(() => ({
-    $disconnect: vi.fn()
-  })),
-  TriggerType: {
-    YIELD_DROP: "YIELD_DROP",
-    RISK_INCREASE: "RISK_INCREASE",
-    BETTER_OPPORTUNITY: "BETTER_OPPORTUNITY",
-    MANUAL_REVIEW: "MANUAL_REVIEW"
-  }
+vi.mock("@/lib/session", () => ({
+  requireApiOrganizationContext: vi.fn().mockResolvedValue({
+    organization: {
+      id: "org_1",
+      name: "TreasuryPilot Demo Workspace"
+    },
+    user: {
+      id: "user_1",
+      email: "demo@treasurypilot.local"
+    }
+  })
 }));
+
+vi.mock("@prisma/client", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@prisma/client")>();
+  return {
+    ...actual,
+    PrismaClient: class PrismaClient {
+      $disconnect = vi.fn();
+    }
+  };
+});
 
 describe("API routes", () => {
   beforeEach(() => {

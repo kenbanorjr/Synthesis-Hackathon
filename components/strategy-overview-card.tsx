@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { ShieldCheck, TrendingDown, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusChip } from "@/components/status-chip";
@@ -15,7 +16,7 @@ export function StrategyOverviewCard({
     targetYield: number;
     riskScore: number;
     status: string;
-    metadata?: Record<string, unknown> | null;
+    metadata?: Prisma.JsonValue;
   } | null;
 }) {
   if (!strategy) {

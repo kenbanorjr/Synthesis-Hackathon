@@ -69,6 +69,12 @@ enum IntegrationMode {
   REAL
 }
 
+enum MembershipRole {
+  OWNER
+  OPERATOR
+  VIEWER
+}
+
 enum DecisionOutcome {
   RECOMMENDED
   AWAITING_APPROVAL
@@ -78,71 +84,180 @@ enum DecisionOutcome {
   REJECTED
 }
 
+enum ExecutionMode {
+  DRY_RUN
+  LIVE
+}
+
+enum ExecutionStatus {
+  PLANNED
+  PENDING_APPROVAL
+  APPROVED
+  SIMULATED
+  SUBMITTED
+  COMPLETED
+  BLOCKED
+  FAILED
+  REJECTED
+}
+
 model User {
+  id                    String               @id @default(cuid())
+  name                  String?
+  email                 String?              @unique
+  emailVerified         DateTime?
+  image                 String?
+  walletAddress         String?
+  defaultOrganizationId String?
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  accounts              Account[]
+  sessions              Session[]
+  memberships           Membership[]
+  defaultOrganization   Organization?        @relation("DefaultOrganization", fields: [defaultOrganizationId], references: [id], onDelete: SetNull)
+  createdOrganizations  Organization[]       @relation("OrganizationCreator")
+  invitedOrganizations  OrganizationInvite[] @relation("OrganizationInviteSender")
+  initiatedRuns         AgentRun[]           @relation("RunInitiator")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Organization {
   id                  String               @id @default(cuid())
   name                String
-  email               String?              @unique
+  slug                String               @unique
   walletAddress       String?
+  createdByUserId     String?
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
+  createdByUser       User?                @relation("OrganizationCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  defaultForUsers     User[]               @relation("DefaultOrganization")
+  memberships         Membership[]
+  invites             OrganizationInvite[]
   treasuryPolicy      TreasuryPolicy?
   strategies          MonitoredStrategy[]
   agentRuns           AgentRun[]
   integrationSettings IntegrationSettings?
+  executionSettings   ExecutionSettings?
+  executionRecords    ExecutionRecord[]
+}
+
+model Membership {
+  id             String         @id @default(cuid())
+  organizationId String
+  userId         String
+  role           MembershipRole @default(OWNER)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+}
+
+model OrganizationInvite {
+  id              String         @id @default(cuid())
+  organizationId  String
+  email           String
+  role            MembershipRole @default(OPERATOR)
+  token           String         @unique
+  invitedByUserId String?
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+  createdAt       DateTime       @default(now())
+  organization    Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invitedByUser   User?          @relation("OrganizationInviteSender", fields: [invitedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([organizationId, email])
 }
 
 model TreasuryPolicy {
-  id                        String       @id @default(cuid())
-  userId                    String       @unique
-  monthlyBudgetUsd          Decimal      @db.Decimal(12, 2)
-  maxSpendPerActionUsd      Decimal      @db.Decimal(12, 2)
-  approvalThresholdUsd      Decimal      @db.Decimal(12, 2)
-  allowedProviders          String[]
-  allowedActions            ActionType[]
-  autoExecuteLowRisk        Boolean      @default(false)
-  createdAt                 DateTime     @default(now())
-  updatedAt                 DateTime     @updatedAt
-  user                      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                   String       @id @default(cuid())
+  organizationId       String       @unique
+  monthlyBudgetUsd     Decimal      @db.Decimal(12, 2)
+  maxSpendPerActionUsd Decimal      @db.Decimal(12, 2)
+  approvalThresholdUsd Decimal      @db.Decimal(12, 2)
+  allowedProviders     String[]
+  allowedActions       ActionType[]
+  autoExecuteLowRisk   Boolean      @default(false)
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+  organization         Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 }
 
 model MonitoredStrategy {
-  id            String         @id @default(cuid())
-  userId        String
-  name          String
-  protocol      String
-  network       String
-  assetSymbol   String
-  currentYield  Decimal        @db.Decimal(8, 2)
-  targetYield   Decimal        @db.Decimal(8, 2)
-  riskScore     Decimal        @db.Decimal(5, 2)
-  status        StrategyStatus @default(ACTIVE)
-  metadata      Json?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  agentRuns     AgentRun[]
+  id             String         @id @default(cuid())
+  organizationId String
+  name           String
+  protocol       String
+  network        String
+  assetSymbol    String
+  currentYield   Decimal        @db.Decimal(8, 2)
+  targetYield    Decimal        @db.Decimal(8, 2)
+  riskScore      Decimal        @db.Decimal(5, 2)
+  status         StrategyStatus @default(ACTIVE)
+  metadata       Json?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  agentRuns      AgentRun[]
 
-  @@unique([userId, name])
+  @@unique([organizationId, name])
 }
 
 model AgentRun {
-  id               String           @id @default(cuid())
-  userId           String
+  id               String            @id @default(cuid())
+  organizationId   String
   strategyId       String
+  initiatedByUserId String?
   triggerType      TriggerType
   triggerSummary   String
   status           RunStatus
-  requiresApproval Boolean          @default(false)
+  requiresApproval Boolean           @default(false)
   finalDecision    DecisionOutcome
-  confidenceScore  Decimal?         @db.Decimal(5, 2)
-  createdAt        DateTime         @default(now())
+  confidenceScore  Decimal?          @db.Decimal(5, 2)
+  createdAt        DateTime          @default(now())
   completedAt      DateTime?
-  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization     Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   strategy         MonitoredStrategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+  initiatedByUser  User?             @relation("RunInitiator", fields: [initiatedByUserId], references: [id], onDelete: SetNull)
   steps            AgentStep[]
   receipts         PaymentReceipt[]
   recommendation   Recommendation?
   approvalRequest  ApprovalRequest?
+  executionRecords ExecutionRecord[]
 }
 
 model AgentStep {
@@ -197,12 +312,52 @@ model ApprovalRequest {
 
 model IntegrationSettings {
   id               String          @id @default(cuid())
-  userId           String          @unique
+  organizationId   String          @unique
   openservMode     IntegrationMode @default(MOCK)
   locusMode        IntegrationMode @default(MOCK)
   demoMode         Boolean         @default(true)
   managedWalletRef String?
+  openservAgentId  String?
+  openservEndpoint String?
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
-  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization     Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model ExecutionSettings {
+  id                        String       @id @default(cuid())
+  organizationId            String       @unique
+  liveExecutionEnabled      Boolean      @default(false)
+  dryRunByDefault           Boolean      @default(true)
+  emergencyStop             Boolean      @default(false)
+  allowedChains             String[]     @default(["base"])
+  allowedDestinations       String[]     @default([])
+  allowedExecutionProviders String[]     @default(["locus-transfer", "base-usdc"])
+  maxExecutionSizeUsd       Decimal      @db.Decimal(12, 2)
+  createdAt                 DateTime     @default(now())
+  updatedAt                 DateTime     @updatedAt
+  organization              Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model ExecutionRecord {
+  id            String          @id @default(cuid())
+  organizationId String
+  agentRunId    String
+  actionType    ActionType
+  provider      String
+  chain         String
+  assetSymbol   String
+  destination   String?
+  amountUsd     Decimal         @db.Decimal(12, 2)
+  mode          ExecutionMode   @default(DRY_RUN)
+  status        ExecutionStatus
+  dryRun        Boolean         @default(true)
+  idempotencyKey String         @unique
+  externalTxId  String?
+  rationale     String
+  metadata      Json?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  organization  Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  agentRun      AgentRun        @relation(fields: [agentRunId], references: [id], onDelete: Cascade)
 }

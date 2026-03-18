@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { z } from "zod";
 import { strategySchema, type StrategyInput } from "@/lib/validators/strategy";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,10 +15,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
+type StrategyFormValues = z.input<typeof strategySchema>;
+
 export function StrategyForm() {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
-  const form = useForm<StrategyInput>({
+  const form = useForm<StrategyFormValues, undefined, StrategyInput>({
     resolver: zodResolver(strategySchema),
     defaultValues: {
       name: "USDC Yield Vault",
@@ -33,8 +36,38 @@ export function StrategyForm() {
       }
     }
   });
+  const [metadataText, setMetadataText] = useState(() => JSON.stringify(form.getValues("metadata"), null, 2));
+
+  function parseMetadata(value: string) {
+    const trimmed = value.trim();
+
+    if (!trimmed) {
+      return undefined;
+    }
+
+    const parsed = JSON.parse(trimmed) as unknown;
+
+    if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") {
+      throw new Error("Metadata must be a JSON object.");
+    }
+
+    return parsed as Record<string, unknown>;
+  }
 
   async function onSubmit(values: StrategyInput) {
+    let metadata: StrategyInput["metadata"];
+
+    try {
+      metadata = parseMetadata(metadataText);
+      form.clearErrors("metadata");
+    } catch (error) {
+      form.setError("metadata", {
+        type: "manual",
+        message: error instanceof Error ? error.message : "Metadata must be valid JSON."
+      });
+      return;
+    }
+
     setIsPending(true);
     startTransition(async () => {
       const response = await fetch("/api/strategies", {
@@ -42,7 +75,10 @@ export function StrategyForm() {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify(values)
+        body: JSON.stringify({
+          ...values,
+          metadata
+        })
       });
 
       const payload = (await response.json()) as { error: { message: string } | null };
@@ -99,8 +135,10 @@ export function StrategyForm() {
             <div className="space-y-2">
               <Label>Status</Label>
               <Select
-                defaultValue={form.getValues("status")}
-                onValueChange={(value) => form.setValue("status", value as StrategyStatus)}
+                value={form.watch("status")}
+                onValueChange={(value) =>
+                  form.setValue("status", value as StrategyStatus, { shouldDirty: true, shouldValidate: true })
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a status" />
@@ -119,18 +157,30 @@ export function StrategyForm() {
             <Label htmlFor="metadata">Metadata JSON</Label>
             <Textarea
               id="metadata"
-              defaultValue={JSON.stringify(form.getValues("metadata"), null, 2)}
+              value={metadataText}
               onChange={(event) => {
+                const value = event.target.value;
+                setMetadataText(value);
+
                 try {
-                  form.setValue("metadata", JSON.parse(event.target.value) as Record<string, unknown>);
-                } catch {
+                  const metadata = parseMetadata(value);
+                  form.clearErrors("metadata");
+                  form.setValue("metadata", metadata, { shouldDirty: true });
+                } catch (error) {
                   form.setError("metadata", {
                     type: "manual",
-                    message: "Metadata must be valid JSON."
+                    message: error instanceof Error ? error.message : "Metadata must be valid JSON."
                   });
                 }
               }}
             />
+            {form.formState.errors.metadata ? (
+              <p className="text-sm text-destructive">{form.formState.errors.metadata.message as string}</p>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Use a JSON object for strategy telemetry, vault addresses, or demo context.
+              </p>
+            )}
           </div>
           <div className="flex justify-end">
             <Button disabled={isPending} type="submit">

@@ -45,4 +45,43 @@ describe("PolicyForm", () => {
     expect(payload.monthlyBudgetUsd).toBe(1800);
     expect(payload.allowedProviders).toEqual(expect.arrayContaining(["gauntlet"]));
   });
+
+  it("preserves and adds custom providers", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: {}, error: null })
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <PolicyForm
+        policy={{
+          monthlyBudgetUsd: 1500,
+          maxSpendPerActionUsd: 500,
+          approvalThresholdUsd: 180,
+          allowedProviders: ["custom-alpha"],
+          allowedActions: ["BUY_ANALYTICS", "SWITCH_STRATEGY"],
+          autoExecuteLowRisk: false
+        }}
+      />
+    );
+
+    expect(screen.getByRole("button", { name: /custom-alpha/i })).toBeInTheDocument();
+
+    fireEvent.change(screen.getByPlaceholderText(/Add custom provider/i), {
+      target: { value: "vault-guardian" }
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Add provider/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Save policy/i }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalled();
+    });
+
+    const payload = JSON.parse(fetchMock.mock.calls[0][1].body as string) as {
+      allowedProviders: string[];
+    };
+
+    expect(payload.allowedProviders).toEqual(expect.arrayContaining(["custom-alpha", "vault-guardian"]));
+  });
 });

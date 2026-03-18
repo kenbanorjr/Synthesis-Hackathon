@@ -6,7 +6,7 @@ function buildPolicy(overrides: Partial<TreasuryPolicy> = {}): TreasuryPolicy {
   const now = new Date();
   return {
     id: "policy_1",
-    userId: "user_1",
+    organizationId: "org_1",
     monthlyBudgetUsd: 1500 as never,
     maxSpendPerActionUsd: 500 as never,
     approvalThresholdUsd: 180 as never,

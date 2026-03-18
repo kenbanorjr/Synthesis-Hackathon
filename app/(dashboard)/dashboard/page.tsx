@@ -9,12 +9,12 @@ import { ReceiptsTable } from "@/components/receipts-table";
 import { StrategyOverviewCard } from "@/components/strategy-overview-card";
 import { WorkflowTimeline } from "@/components/workflow-timeline";
 import { getDashboardData } from "@/lib/services/dashboard-service";
-import { getDemoUserWithWorkspace } from "@/lib/services/user-service";
 import { formatCurrency } from "@/lib/formatters";
+import { requireCurrentOrganizationContext } from "@/lib/session";
 
 export default async function DashboardPage() {
-  const workspace = await getDemoUserWithWorkspace();
-  const dashboard = await getDashboardData(workspace.id);
+  const workspace = await requireCurrentOrganizationContext();
+  const dashboard = await getDashboardData(workspace.organization.id);
 
   return (
     <>

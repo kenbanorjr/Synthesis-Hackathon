@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Sparkles } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusChip } from "@/components/status-chip";
@@ -19,6 +20,12 @@ export function LatestRecommendationCard({
       title: string;
       reason: string;
     } | null;
+    executionRecords: Array<{
+      status: string;
+      mode: string;
+      provider: string;
+      amountUsd: number;
+    }>;
   } | null;
 }) {
   return (
@@ -63,6 +70,20 @@ export function LatestRecommendationCard({
               <div className="rounded-3xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                 <p className="font-semibold">{latestRun.approvalRequest.title}</p>
                 <p className="mt-2">{latestRun.approvalRequest.reason}</p>
+                <Link className="mt-3 inline-flex text-sm font-semibold text-amber-900 underline underline-offset-4" href="/runs">
+                  Review and resolve in Agent runs
+                </Link>
+              </div>
+            ) : null}
+            {latestRun.executionRecords[0] ? (
+              <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+                <p className="font-semibold">Execution state</p>
+                <p className="mt-2">
+                  {latestRun.executionRecords[0].mode.replaceAll("_", " ")} via {latestRun.executionRecords[0].provider} for {latestRun.executionRecords[0].amountUsd.toFixed(0)} USD.
+                </p>
+                <p className="mt-2 text-xs uppercase tracking-[0.18em] text-emerald-800/80">
+                  {latestRun.executionRecords[0].status.replaceAll("_", " ")}
+                </p>
               </div>
             ) : null}
           </>

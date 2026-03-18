@@ -13,8 +13,11 @@ import { getOpportunityCatalog } from "@/lib/services/opportunity-catalog";
 import { purchaseNeedsApproval, purchasePremiumAnalytics, getMonthlySpentUsd } from "@/lib/services/payment-service";
 import { evaluatePolicyGuardrails } from "@/lib/services/policy-service";
 import { getStrategyById } from "@/lib/services/strategy-service";
-import { getDemoUserWithWorkspace } from "@/lib/services/user-service";
 import { decimalToNumber, serializeRun } from "@/lib/serializers";
+
+function toJson(value: unknown): Prisma.InputJsonValue {
+  return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
+}
 
 async function createStep(input: {
   agentRunId: string;
@@ -44,8 +47,8 @@ export function resolveWorkflowOutcome(input: {
   canAutoExecute: boolean;
   actionType: ActionType;
 }) {
-  let finalDecision = DecisionOutcome.RECOMMENDED;
-  let runStatus = RunStatus.COMPLETED;
+  let finalDecision: DecisionOutcome = DecisionOutcome.RECOMMENDED;
+  let runStatus: RunStatus = RunStatus.COMPLETED;
 
   if (!input.triggerDetected) {
     finalDecision = DecisionOutcome.NO_ACTION;
@@ -65,24 +68,37 @@ export function resolveWorkflowOutcome(input: {
   };
 }
 
-export async function runAgentWorkflow(input: { strategyId?: string; triggerType?: TriggerType }) {
-  const user = await getDemoUserWithWorkspace();
-  const strategy =
+export async function runAgentWorkflow(input: {
+  organizationId: string;
+  initiatedByUserId?: string;
+  strategyId?: string;
+  triggerType?: TriggerType;
+}) {
+  const [policy, settings, strategy] = await Promise.all([
+    prisma.treasuryPolicy.findUnique({
+      where: { organizationId: input.organizationId }
+    }),
+    prisma.integrationSettings.findUnique({
+      where: { organizationId: input.organizationId }
+    }),
     input.strategyId
-      ? await getStrategyById(user.id, input.strategyId)
-      : await prisma.monitoredStrategy.findFirst({
-          where: { userId: user.id },
+      ? getStrategyById(input.organizationId, input.strategyId)
+      : prisma.monitoredStrategy.findFirst({
+          where: { organizationId: input.organizationId },
           orderBy: { updatedAt: "desc" }
-        });
+        })
+  ]);
 
   if (!strategy) {
     throw new Error("No monitored strategy found.");
   }
 
-  const policy = user.treasuryPolicy;
-  const settings = user.integrationSettings;
+  if (!policy || !settings) {
+    throw new Error("Organization is missing treasury policy or integration settings.");
+  }
+
   const opportunities = getOpportunityCatalog(strategy);
-  const monthlySpentUsd = await getMonthlySpentUsd(user.id);
+  const monthlySpentUsd = await getMonthlySpentUsd(input.organizationId);
   const openServ = getOpenServAdapter(settings.openservMode);
   const workflow = await openServ.runWorkflow({
     strategy: {
@@ -108,8 +124,9 @@ export async function runAgentWorkflow(input: { strategyId?: string; triggerType
 
   const run = await prisma.agentRun.create({
     data: {
-      userId: user.id,
+      organizationId: input.organizationId,
       strategyId: strategy.id,
+      initiatedByUserId: input.initiatedByUserId,
       triggerType: workflow.monitor.triggerType,
       triggerSummary: workflow.monitor.summary,
       status: RunStatus.RUNNING,
@@ -128,7 +145,7 @@ export async function runAgentWorkflow(input: { strategyId?: string; triggerType
       targetYield: decimalToNumber(strategy.targetYield),
       riskScore: decimalToNumber(strategy.riskScore)
     },
-    output: workflow.monitor
+    output: toJson(workflow.monitor)
   });
 
   let purchase = null as
@@ -138,7 +155,7 @@ export async function runAgentWorkflow(input: { strategyId?: string; triggerType
   if (workflow.research.premiumDataRequest) {
     purchase = await purchasePremiumAnalytics({
       agentRunId: run.id,
-      userId: user.id,
+      organizationId: input.organizationId,
       policy,
       settings,
       provider: workflow.research.premiumDataRequest.provider,
@@ -160,10 +177,10 @@ export async function runAgentWorkflow(input: { strategyId?: string; triggerType
       opportunityCount: opportunities.length,
       allowedProviders: policy.allowedProviders
     },
-    output: {
+    output: toJson({
       ...workflow.research,
       purchaseReceipt: purchase?.receipt ?? null
-    }
+    })
   });
 
   const guardrails = evaluatePolicyGuardrails({
@@ -185,10 +202,10 @@ export async function runAgentWorkflow(input: { strategyId?: string; triggerType
       maxSpendPerActionUsd: decimalToNumber(policy.maxSpendPerActionUsd),
       approvalThresholdUsd: decimalToNumber(policy.approvalThresholdUsd)
     },
-    output: {
+    output: toJson({
       ...workflow.risk,
       guardrails
-    }
+    })
   });
 
   const purchaseApprovalRequired = purchase ? purchaseNeedsApproval(purchase.result) : false;
@@ -238,11 +255,11 @@ export async function runAgentWorkflow(input: { strategyId?: string; triggerType
       targetProtocol: workflow.execution.targetProtocol,
       estimatedCostUsd: workflow.execution.estimatedCostUsd
     },
-    output: {
+    output: toJson({
       ...workflow.execution,
       finalDecision,
       purchaseStatus: purchase?.result.status ?? "not_requested"
-    },
+    }),
     status: finalDecision === DecisionOutcome.BLOCKED ? StepStatus.FAILED : StepStatus.SUCCESS
   });
 
@@ -254,7 +271,7 @@ export async function runAgentWorkflow(input: { strategyId?: string; triggerType
       decision: finalDecision,
       recommendationId: recommendation.id
     },
-    output: workflow.explainer
+    output: toJson(workflow.explainer)
   });
 
   const completedAt = runStatus === RunStatus.AWAITING_APPROVAL ? null : new Date();
@@ -272,22 +289,24 @@ export async function runAgentWorkflow(input: { strategyId?: string; triggerType
       steps: { orderBy: { createdAt: "asc" } },
       receipts: { orderBy: { createdAt: "desc" } },
       recommendation: true,
-      approvalRequest: true
+      approvalRequest: true,
+      executionRecords: { orderBy: { createdAt: "desc" } }
     }
   });
 
   return serializeRun(finalizedRun);
 }
 
-export async function listAgentRuns(userId: string) {
+export async function listAgentRuns(organizationId: string) {
   const runs = await prisma.agentRun.findMany({
-    where: { userId },
+    where: { organizationId },
     include: {
       strategy: true,
       steps: { orderBy: { createdAt: "asc" } },
       receipts: { orderBy: { createdAt: "desc" } },
       recommendation: true,
-      approvalRequest: true
+      approvalRequest: true,
+      executionRecords: { orderBy: { createdAt: "desc" } }
     },
     orderBy: { createdAt: "desc" }
   });
@@ -295,8 +314,10 @@ export async function listAgentRuns(userId: string) {
   return runs.map(serializeRun);
 }
 
-export async function runDemoScenario() {
+export async function runDemoScenario(organizationId: string, initiatedByUserId?: string) {
   return runAgentWorkflow({
+    organizationId,
+    initiatedByUserId,
     triggerType: TriggerType.YIELD_DROP
   });
 }

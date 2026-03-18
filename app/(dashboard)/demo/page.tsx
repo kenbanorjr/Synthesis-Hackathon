@@ -4,11 +4,11 @@ import { DemoActions } from "@/components/demo-actions";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getDashboardData } from "@/lib/services/dashboard-service";
-import { getDemoUserWithWorkspace } from "@/lib/services/user-service";
+import { requireCurrentOrganizationContext } from "@/lib/session";
 
 export default async function DemoPage() {
-  const workspace = await getDemoUserWithWorkspace();
-  const dashboard = await getDashboardData(workspace.id);
+  const workspace = await requireCurrentOrganizationContext();
+  const dashboard = await getDashboardData(workspace.organization.id);
 
   return (
     <>

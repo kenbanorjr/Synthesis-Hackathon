@@ -1,41 +1,43 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { getMonthlySpentUsd, listReceiptsForUser } from "@/lib/services/payment-service";
+import { getMonthlySpentUsd, listReceiptsForOrganization } from "@/lib/services/payment-service";
 import { decimalToNumber, serializeIntegrationSettings, serializePolicy, serializeRun, serializeStrategy } from "@/lib/serializers";
 
-export async function getDashboardData(userId: string) {
+export async function getDashboardData(organizationId: string) {
   const [policy, settings, strategies, latestRun, recentRuns, receipts, monthlySpentUsd] = await Promise.all([
-    prisma.treasuryPolicy.findUnique({ where: { userId } }),
-    prisma.integrationSettings.findUnique({ where: { userId } }),
+    prisma.treasuryPolicy.findUnique({ where: { organizationId } }),
+    prisma.integrationSettings.findUnique({ where: { organizationId } }),
     prisma.monitoredStrategy.findMany({
-      where: { userId },
+      where: { organizationId },
       orderBy: { updatedAt: "desc" }
     }),
     prisma.agentRun.findFirst({
-      where: { userId },
+      where: { organizationId },
       include: {
         strategy: true,
         steps: { orderBy: { createdAt: "asc" } },
         receipts: { orderBy: { createdAt: "desc" } },
         recommendation: true,
-        approvalRequest: true
+        approvalRequest: true,
+        executionRecords: { orderBy: { createdAt: "desc" } }
       },
       orderBy: { createdAt: "desc" }
     }),
     prisma.agentRun.findMany({
-      where: { userId },
+      where: { organizationId },
       include: {
         strategy: true,
         recommendation: true,
         approvalRequest: true,
         receipts: true,
-        steps: true
+        steps: true,
+        executionRecords: true
       },
       orderBy: { createdAt: "desc" },
       take: 5
     }),
-    listReceiptsForUser(userId, 5),
-    getMonthlySpentUsd(userId)
+    listReceiptsForOrganization(organizationId, 5),
+    getMonthlySpentUsd(organizationId)
   ]);
 
   if (!policy || !settings) {
@@ -77,15 +79,16 @@ export async function getDashboardData(userId: string) {
   };
 }
 
-export async function getAuditLog(userId: string) {
+export async function getAuditLog(organizationId: string) {
   const runs = await prisma.agentRun.findMany({
-    where: { userId },
+    where: { organizationId },
     include: {
       strategy: true,
       steps: { orderBy: { createdAt: "asc" } },
       receipts: { orderBy: { createdAt: "desc" } },
       recommendation: true,
-      approvalRequest: true
+      approvalRequest: true,
+      executionRecords: { orderBy: { createdAt: "desc" } }
     },
     orderBy: { createdAt: "desc" }
   });

@@ -4,11 +4,11 @@ import { BudgetUsageCard } from "@/components/budget-usage-card";
 import { PageHeader } from "@/components/page-header";
 import { PolicyForm } from "@/components/policy-form";
 import { getDashboardData } from "@/lib/services/dashboard-service";
-import { getDemoUserWithWorkspace } from "@/lib/services/user-service";
+import { requireCurrentOrganizationContext } from "@/lib/session";
 
 export default async function PoliciesPage() {
-  const workspace = await getDemoUserWithWorkspace();
-  const dashboard = await getDashboardData(workspace.id);
+  const workspace = await requireCurrentOrganizationContext();
+  const dashboard = await getDashboardData(workspace.organization.id);
 
   return (
     <>

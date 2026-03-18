@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ComponentProps } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -10,7 +11,7 @@ export function EmptyState({
 }: {
   title: string;
   description: string;
-  actionHref: string;
+  actionHref: ComponentProps<typeof Link>["href"];
   actionLabel: string;
 }) {
   return (

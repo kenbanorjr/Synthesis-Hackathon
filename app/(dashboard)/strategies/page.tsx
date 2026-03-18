@@ -5,12 +5,12 @@ import { PageHeader } from "@/components/page-header";
 import { StatusChip } from "@/components/status-chip";
 import { StrategyForm } from "@/components/strategy-form";
 import { getDashboardData } from "@/lib/services/dashboard-service";
-import { getDemoUserWithWorkspace } from "@/lib/services/user-service";
 import { formatPercent } from "@/lib/formatters";
+import { requireCurrentOrganizationContext } from "@/lib/session";
 
 export default async function StrategiesPage() {
-  const workspace = await getDemoUserWithWorkspace();
-  const dashboard = await getDashboardData(workspace.id);
+  const workspace = await requireCurrentOrganizationContext();
+  const dashboard = await getDashboardData(workspace.organization.id);
 
   return (
     <>

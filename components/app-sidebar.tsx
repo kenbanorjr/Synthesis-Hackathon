@@ -5,10 +5,17 @@ import { usePathname } from "next/navigation";
 import { LayoutDashboard, Shield, Radar, Bot, Receipt, PlayCircle } from "lucide-react";
 import { navItems } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { SessionButton } from "@/components/session-button";
 
 const icons = [LayoutDashboard, Shield, Radar, Bot, Receipt, PlayCircle] as const;
 
-export function AppSidebar() {
+export function AppSidebar({
+  organizationName,
+  userLabel
+}: {
+  organizationName: string;
+  userLabel: string;
+}) {
   const pathname = usePathname();
 
   return (
@@ -18,6 +25,11 @@ export function AppSidebar() {
           <p className="text-xs font-semibold uppercase tracking-[0.25em] text-primary">TreasuryPilot</p>
           <h2 className="text-2xl font-semibold">Agentic treasury ops</h2>
           <p className="text-sm text-muted-foreground">OpenServ research, Locus spend controls, and full receipts in one cockpit.</p>
+          <div className="rounded-2xl border border-border/70 bg-muted/60 px-4 py-3">
+            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Workspace</p>
+            <p className="mt-2 font-medium text-foreground">{organizationName}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{userLabel}</p>
+          </div>
         </div>
         <nav className="space-y-2">
           {navItems.map((item, index) => {
@@ -44,6 +56,9 @@ export function AppSidebar() {
         <div className="mt-3 space-y-2 text-sm">
           <p>OpenServ powers the multi-agent workflow.</p>
           <p>Locus handles spend controls, wallets, approvals, and receipts.</p>
+        </div>
+        <div className="mt-5">
+          <SessionButton action="signOut" variant="secondary" />
         </div>
       </div>
     </aside>

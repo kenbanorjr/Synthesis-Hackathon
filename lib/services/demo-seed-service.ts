@@ -11,60 +11,64 @@ import {
   TriggerType,
   type PrismaClient
 } from "@prisma/client";
-import { appConfig } from "@/lib/config";
 import { defaultAllowedActions, defaultAllowedProviders } from "@/lib/constants";
 
-export async function seedDemoWorkspace(client: PrismaClient) {
-  const user = await client.user.upsert({
-    where: { email: appConfig.demoUserEmail },
-    update: {
-      name: "TreasuryPilot Demo Operator",
-      walletAddress: "0xDemoTreasuryOperator"
-    },
-    create: {
-      name: "TreasuryPilot Demo Operator",
-      email: appConfig.demoUserEmail,
-      walletAddress: "0xDemoTreasuryOperator"
+export async function seedDemoWorkspace(
+  client: PrismaClient,
+  input: {
+    organizationId: string;
+    userId: string;
+  }
+) {
+  await client.organization.update({
+    where: { id: input.organizationId },
+    data: {
+      name: "TreasuryPilot Demo Workspace",
+      walletAddress: "0xDemoTreasuryVault"
     }
+  });
+
+  await client.executionRecord.deleteMany({
+    where: { organizationId: input.organizationId }
   });
 
   await client.paymentReceipt.deleteMany({
     where: {
       agentRun: {
-        userId: user.id
+        organizationId: input.organizationId
       }
     }
   });
   await client.recommendation.deleteMany({
     where: {
       agentRun: {
-        userId: user.id
+        organizationId: input.organizationId
       }
     }
   });
   await client.approvalRequest.deleteMany({
     where: {
       agentRun: {
-        userId: user.id
+        organizationId: input.organizationId
       }
     }
   });
   await client.agentStep.deleteMany({
     where: {
       agentRun: {
-        userId: user.id
+        organizationId: input.organizationId
       }
     }
   });
   await client.agentRun.deleteMany({
-    where: { userId: user.id }
+    where: { organizationId: input.organizationId }
   });
   await client.monitoredStrategy.deleteMany({
-    where: { userId: user.id }
+    where: { organizationId: input.organizationId }
   });
 
   await client.treasuryPolicy.upsert({
-    where: { userId: user.id },
+    where: { organizationId: input.organizationId },
     update: {
       monthlyBudgetUsd: new Prisma.Decimal(1500),
       maxSpendPerActionUsd: new Prisma.Decimal(500),
@@ -74,7 +78,7 @@ export async function seedDemoWorkspace(client: PrismaClient) {
       autoExecuteLowRisk: false
     },
     create: {
-      userId: user.id,
+      organizationId: input.organizationId,
       monthlyBudgetUsd: new Prisma.Decimal(1500),
       maxSpendPerActionUsd: new Prisma.Decimal(500),
       approvalThresholdUsd: new Prisma.Decimal(180),
@@ -85,25 +89,50 @@ export async function seedDemoWorkspace(client: PrismaClient) {
   });
 
   await client.integrationSettings.upsert({
-    where: { userId: user.id },
+    where: { organizationId: input.organizationId },
     update: {
       openservMode: IntegrationMode.MOCK,
       locusMode: IntegrationMode.MOCK,
       demoMode: true,
-      managedWalletRef: "locus-demo-wallet"
+      managedWalletRef: "locus-demo-wallet",
+      openservEndpoint: null
     },
     create: {
-      userId: user.id,
+      organizationId: input.organizationId,
       openservMode: IntegrationMode.MOCK,
       locusMode: IntegrationMode.MOCK,
       demoMode: true,
-      managedWalletRef: "locus-demo-wallet"
+      managedWalletRef: "locus-demo-wallet",
+      openservEndpoint: null
+    }
+  });
+
+  await client.executionSettings.upsert({
+    where: { organizationId: input.organizationId },
+    update: {
+      liveExecutionEnabled: false,
+      dryRunByDefault: true,
+      emergencyStop: false,
+      allowedChains: ["base"],
+      allowedDestinations: [],
+      allowedExecutionProviders: ["locus-transfer", "base-usdc"],
+      maxExecutionSizeUsd: new Prisma.Decimal(1000)
+    },
+    create: {
+      organizationId: input.organizationId,
+      liveExecutionEnabled: false,
+      dryRunByDefault: true,
+      emergencyStop: false,
+      allowedChains: ["base"],
+      allowedDestinations: [],
+      allowedExecutionProviders: ["locus-transfer", "base-usdc"],
+      maxExecutionSizeUsd: new Prisma.Decimal(1000)
     }
   });
 
   const strategy = await client.monitoredStrategy.create({
     data: {
-      userId: user.id,
+      organizationId: input.organizationId,
       name: "USDC Yield Vault",
       protocol: "Spark",
       network: "Base",
@@ -149,8 +178,9 @@ export async function seedDemoWorkspace(client: PrismaClient) {
 
   const historicalRun = await client.agentRun.create({
     data: {
-      userId: user.id,
+      organizationId: input.organizationId,
       strategyId: strategy.id,
+      initiatedByUserId: input.userId,
       triggerType: TriggerType.BETTER_OPPORTUNITY,
       triggerSummary: "A whitelisted reserve rebalance improved projected yield without increasing risk.",
       status: RunStatus.COMPLETED,
@@ -233,8 +263,9 @@ export async function seedDemoWorkspace(client: PrismaClient) {
 
   const pendingRun = await client.agentRun.create({
     data: {
-      userId: user.id,
+      organizationId: input.organizationId,
       strategyId: strategy.id,
+      initiatedByUserId: input.userId,
       triggerType: TriggerType.MANUAL_REVIEW,
       triggerSummary: "Premium analytics for a strategy migration is pending approval.",
       status: RunStatus.AWAITING_APPROVAL,
@@ -242,6 +273,69 @@ export async function seedDemoWorkspace(client: PrismaClient) {
       finalDecision: DecisionOutcome.AWAITING_APPROVAL,
       confidenceScore: new Prisma.Decimal(0.82)
     }
+  });
+
+  await client.agentStep.createMany({
+    data: [
+      {
+        agentRunId: pendingRun.id,
+        agentType: "MONITOR",
+        title: "Monitor Agent confirmed the yield vault is still trailing its target.",
+        input: { currentYield: 4.1, targetYield: 6.2 },
+        output: {
+          triggerType: "YIELD_DROP",
+          summary: "USDC Yield Vault is more than 2% below its target yield."
+        },
+        status: StepStatus.SUCCESS
+      },
+      {
+        agentRunId: pendingRun.id,
+        agentType: "RESEARCH",
+        title: "Research Agent selected a stronger whitelisted venue and requested premium analytics.",
+        input: { providers: [...defaultAllowedProviders] },
+        output: {
+          selectedOpportunity: "Morpho Prime USDC",
+          provider: "locus-analytics",
+          summary: "Premium analytics are needed to validate the migration before moving treasury capital."
+        },
+        status: StepStatus.SUCCESS
+      },
+      {
+        agentRunId: pendingRun.id,
+        agentType: "RISK",
+        title: "Risk Agent enforced the approval threshold for the analytics purchase.",
+        input: { approvalThresholdUsd: 180, premiumDataCostUsd: 220 },
+        output: {
+          lowRisk: true,
+          requiresApproval: true,
+          summary: "The strategy switch is low risk, but the analytics spend crosses the operator threshold."
+        },
+        status: StepStatus.SUCCESS
+      },
+      {
+        agentRunId: pendingRun.id,
+        agentType: "EXECUTION",
+        title: "Execution Agent paused the bounded action until the paid data request is approved.",
+        input: { actionType: ActionType.SWITCH_STRATEGY, estimatedCostUsd: 240 },
+        output: {
+          purchaseStatus: "pending_approval",
+          finalDecision: DecisionOutcome.AWAITING_APPROVAL,
+          summary: "TreasuryPilot is ready to switch vaults once the operator clears the premium analytics packet."
+        },
+        status: StepStatus.PENDING
+      },
+      {
+        agentRunId: pendingRun.id,
+        agentType: "EXPLAINER",
+        title: "Explainer Agent summarized the approval checkpoint for operators.",
+        input: { audience: "operator" },
+        output: {
+          headline: "Approve premium analytics before migrating the yield vault",
+          summary: "The treasury path is whitelisted and low risk, but the paid research packet is gated by policy."
+        },
+        status: StepStatus.SUCCESS
+      }
+    ]
   });
 
   await client.paymentReceipt.create({
@@ -267,5 +361,36 @@ export async function seedDemoWorkspace(client: PrismaClient) {
     }
   });
 
-  return user;
+  await client.recommendation.create({
+    data: {
+      agentRunId: pendingRun.id,
+      headline: "Switch USDC reserves toward Morpho Prime after paid validation",
+      rationale: "The Research Agent found a higher-yield whitelisted venue, but the premium analytics packet needs operator approval first.",
+      proposedAction: "Approve the analytics packet, then switch a bounded slice of USDC from Spark into Morpho Prime.",
+      expectedImpact: "Projected yield improves by roughly 3.8% while staying within the low-risk band.",
+      riskAssessment: "Low risk strategy migration, manual approval required for the analytics spend."
+    }
+  });
+
+  await client.executionRecord.create({
+    data: {
+      organizationId: input.organizationId,
+      agentRunId: pendingRun.id,
+      actionType: ActionType.SWITCH_STRATEGY,
+      provider: "treasury-pilot",
+      chain: "base",
+      assetSymbol: "USDC",
+      amountUsd: new Prisma.Decimal(240),
+      mode: "DRY_RUN",
+      status: "PENDING_APPROVAL",
+      dryRun: true,
+      idempotencyKey: `seeded-${pendingRun.id}`,
+      rationale: "Execution is prepared as a dry run and awaits operator approval of the analytics spend.",
+      metadata: {
+        source: "demo-seed"
+      }
+    }
+  });
+
+  return strategy;
 }

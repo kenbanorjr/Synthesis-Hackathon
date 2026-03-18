@@ -2,12 +2,12 @@ export const dynamic = "force-dynamic";
 
 import { PageHeader } from "@/components/page-header";
 import { ReceiptsTable } from "@/components/receipts-table";
-import { getDemoUserWithWorkspace } from "@/lib/services/user-service";
-import { listReceiptsForUser } from "@/lib/services/payment-service";
+import { listReceiptsForOrganization } from "@/lib/services/payment-service";
+import { requireCurrentOrganizationContext } from "@/lib/session";
 
 export default async function ReceiptsPage() {
-  const workspace = await getDemoUserWithWorkspace();
-  const receipts = await listReceiptsForUser(workspace.id, 50);
+  const workspace = await requireCurrentOrganizationContext();
+  const receipts = await listReceiptsForOrganization(workspace.organization.id, 50);
 
   return (
     <>

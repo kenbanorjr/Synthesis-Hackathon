@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { ArrowRight, Radar, Shield, Wallet } from "lucide-react";
+import { SessionButton } from "@/components/session-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { getOptionalCurrentOrganizationContext } from "@/lib/session";
 
 const pillars = [
   {
@@ -21,7 +23,9 @@ const pillars = [
   }
 ];
 
-export default function MarketingPage() {
+export default async function MarketingPage() {
+  const workspace = await getOptionalCurrentOrganizationContext();
+
   return (
     <main className="min-h-screen">
       <section className="relative overflow-hidden px-4 pb-16 pt-8 sm:px-6 lg:px-8">
@@ -39,14 +43,18 @@ export default function MarketingPage() {
               </div>
               <div className="flex flex-wrap gap-3">
                 <Button asChild size="lg">
-                  <Link href="/dashboard">
-                    Open dashboard
+                  <Link href={workspace ? "/dashboard" : "/signin"}>
+                    {workspace ? "Open dashboard" : "Open workspace"}
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
-                <Button asChild variant="secondary" size="lg">
-                  <Link href="/demo">Run demo mode</Link>
-                </Button>
+                {workspace ? (
+                  <Button asChild variant="secondary" size="lg">
+                    <Link href="/demo">Run demo mode</Link>
+                  </Button>
+                ) : (
+                  <SessionButton action="signIn" provider="google" callbackUrl="/dashboard" variant="secondary" />
+                )}
               </div>
             </div>
           </div>
@@ -73,8 +81,12 @@ export default function MarketingPage() {
         <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[1.2fr_0.8fr]">
           <Card>
             <CardHeader>
-              <CardTitle>Hackathon fit</CardTitle>
-              <CardDescription>TreasuryPilot is intentionally shaped to satisfy both target tracks.</CardDescription>
+              <CardTitle>{workspace ? workspace.organization.name : "Hackathon fit"}</CardTitle>
+              <CardDescription>
+                {workspace
+                  ? "This workspace is ready for a signed-in demo flow with policy controls, receipts, and approvals."
+                  : "TreasuryPilot is intentionally shaped to satisfy both target tracks."}
+              </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 sm:grid-cols-2">
               <div className="rounded-[1.5rem] bg-muted/70 p-5">

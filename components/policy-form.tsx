@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { z } from "zod";
 import { defaultAllowedProviders } from "@/lib/constants";
 import { actionLabel } from "@/lib/serializers";
 import { policySchema, type PolicyInput } from "@/lib/validators/policy";
@@ -17,6 +18,7 @@ import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
 const actionOptions = Object.values(ActionType);
+type PolicyFormValues = z.input<typeof policySchema>;
 
 export function PolicyForm({
   policy
@@ -32,7 +34,8 @@ export function PolicyForm({
 }) {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
-  const form = useForm<PolicyInput>({
+  const [providerDraft, setProviderDraft] = useState("");
+  const form = useForm<PolicyFormValues, undefined, PolicyInput>({
     resolver: zodResolver(policySchema),
     defaultValues: {
       monthlyBudgetUsd: policy.monthlyBudgetUsd,
@@ -44,9 +47,10 @@ export function PolicyForm({
     }
   });
 
-  const selectedProviders = form.watch("allowedProviders");
-  const selectedActions = form.watch("allowedActions");
+  const selectedProviders = form.watch("allowedProviders") ?? [];
+  const selectedActions = form.watch("allowedActions") ?? [];
   const autoExecuteLowRisk = form.watch("autoExecuteLowRisk");
+  const providerOptions = [...new Set([...selectedProviders, ...defaultAllowedProviders])];
 
   async function onSubmit(values: PolicyInput) {
     setIsPending(true);
@@ -74,19 +78,40 @@ export function PolicyForm({
   }
 
   function toggleProvider(provider: string) {
-    const providers = form.getValues("allowedProviders");
+    const providers = form.getValues("allowedProviders") ?? [];
     form.setValue(
       "allowedProviders",
-      providers.includes(provider) ? providers.filter((value) => value !== provider) : [...providers, provider]
+      providers.includes(provider) ? providers.filter((value) => value !== provider) : [...providers, provider],
+      { shouldDirty: true, shouldValidate: true }
     );
   }
 
   function toggleAction(action: ActionType) {
-    const actions = form.getValues("allowedActions");
+    const actions = form.getValues("allowedActions") ?? [];
     form.setValue(
       "allowedActions",
-      actions.includes(action) ? actions.filter((value) => value !== action) : [...actions, action]
+      actions.includes(action) ? actions.filter((value) => value !== action) : [...actions, action],
+      { shouldDirty: true, shouldValidate: true }
     );
+  }
+
+  function addProvider() {
+    const provider = providerDraft.trim().toLowerCase();
+
+    if (!provider) {
+      return;
+    }
+
+    if (selectedProviders.includes(provider)) {
+      toast.error("That provider is already in the policy.");
+      return;
+    }
+
+    form.setValue("allowedProviders", [...selectedProviders, provider], {
+      shouldDirty: true,
+      shouldValidate: true
+    });
+    setProviderDraft("");
   }
 
   return (
@@ -116,7 +141,7 @@ export function PolicyForm({
             <div className="space-y-3">
               <Label>Allowed providers</Label>
               <div className="flex flex-wrap gap-3">
-                {defaultAllowedProviders.map((provider) => {
+                {providerOptions.map((provider) => {
                   const active = selectedProviders.includes(provider);
                   return (
                     <button
@@ -133,6 +158,29 @@ export function PolicyForm({
                   );
                 })}
               </div>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Input
+                  placeholder="Add custom provider"
+                  value={providerDraft}
+                  onChange={(event) => setProviderDraft(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      addProvider();
+                    }
+                  }}
+                />
+                <Button type="button" variant="outline" onClick={addProvider}>
+                  Add provider
+                </Button>
+              </div>
+              {form.formState.errors.allowedProviders ? (
+                <p className="text-sm text-destructive">{form.formState.errors.allowedProviders.message as string}</p>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Default whitelisted providers are preloaded, and custom providers remain visible after saving.
+                </p>
+              )}
             </div>
             <div className="space-y-3">
               <Label>Allowed actions</Label>
@@ -167,7 +215,9 @@ export function PolicyForm({
             <Switch
               id="autoExecuteLowRisk"
               checked={autoExecuteLowRisk}
-              onCheckedChange={(checked) => form.setValue("autoExecuteLowRisk", checked)}
+              onCheckedChange={(checked) =>
+                form.setValue("autoExecuteLowRisk", checked, { shouldDirty: true, shouldValidate: true })
+              }
             />
           </div>
 

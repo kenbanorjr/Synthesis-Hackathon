@@ -2,6 +2,8 @@ import {
   ActionType,
   ApprovalStatus,
   DecisionOutcome,
+  ExecutionMode,
+  ExecutionStatus,
   Prisma,
   ReceiptStatus,
   RunStatus,
@@ -10,6 +12,7 @@ import {
   type AgentRun,
   type AgentStep,
   type ApprovalRequest,
+  type ExecutionRecord,
   type IntegrationSettings,
   type MonitoredStrategy,
   type PaymentReceipt,
@@ -122,6 +125,27 @@ export function serializeApproval(approval: ApprovalRequest | null) {
   };
 }
 
+export function serializeExecutionRecord(record: ExecutionRecord) {
+  return {
+    id: record.id,
+    actionType: record.actionType as ActionType,
+    provider: record.provider,
+    chain: record.chain,
+    assetSymbol: record.assetSymbol,
+    destination: record.destination,
+    amountUsd: decimalToNumber(record.amountUsd),
+    mode: record.mode as ExecutionMode,
+    status: record.status as ExecutionStatus,
+    dryRun: record.dryRun,
+    idempotencyKey: record.idempotencyKey,
+    externalTxId: record.externalTxId,
+    rationale: record.rationale,
+    metadata: record.metadata,
+    createdAt: record.createdAt.toISOString(),
+    updatedAt: record.updatedAt.toISOString()
+  };
+}
+
 export function serializeRun(
   run: AgentRun & {
     steps?: AgentStep[];
@@ -129,6 +153,7 @@ export function serializeRun(
     recommendation?: Recommendation | null;
     approvalRequest?: ApprovalRequest | null;
     strategy?: MonitoredStrategy;
+    executionRecords?: ExecutionRecord[];
   }
 ) {
   return {
@@ -146,7 +171,8 @@ export function serializeRun(
     steps: run.steps?.map(serializeStep) ?? [],
     receipts: run.receipts?.map(serializeReceipt) ?? [],
     recommendation: serializeRecommendation(run.recommendation ?? null),
-    approvalRequest: serializeApproval(run.approvalRequest ?? null)
+    approvalRequest: serializeApproval(run.approvalRequest ?? null),
+    executionRecords: run.executionRecords?.map(serializeExecutionRecord) ?? []
   };
 }
 
@@ -157,6 +183,8 @@ export function serializeIntegrationSettings(settings: IntegrationSettings) {
     locusMode: settings.locusMode,
     demoMode: settings.demoMode,
     managedWalletRef: settings.managedWalletRef,
+    openservAgentId: settings.openservAgentId,
+    openservEndpoint: settings.openservEndpoint,
     createdAt: settings.createdAt.toISOString(),
     updatedAt: settings.updatedAt.toISOString()
   };

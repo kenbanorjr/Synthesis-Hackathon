@@ -22,9 +22,9 @@ export interface PolicyGuardrailResult {
   remainingBudgetUsd: number;
 }
 
-export async function getPolicyForUser(userId: string) {
+export async function getPolicyForOrganization(organizationId: string) {
   const policy = await prisma.treasuryPolicy.findUnique({
-    where: { userId }
+    where: { organizationId }
   });
 
   if (!policy) {
@@ -34,9 +34,9 @@ export async function getPolicyForUser(userId: string) {
   return policy;
 }
 
-export async function upsertPolicy(userId: string, input: PolicyInput) {
+export async function upsertPolicy(organizationId: string, input: PolicyInput) {
   const policy = await prisma.treasuryPolicy.upsert({
-    where: { userId },
+    where: { organizationId },
     update: {
       monthlyBudgetUsd: input.monthlyBudgetUsd,
       maxSpendPerActionUsd: input.maxSpendPerActionUsd,
@@ -46,7 +46,7 @@ export async function upsertPolicy(userId: string, input: PolicyInput) {
       autoExecuteLowRisk: input.autoExecuteLowRisk
     },
     create: {
-      userId,
+      organizationId,
       monthlyBudgetUsd: input.monthlyBudgetUsd,
       maxSpendPerActionUsd: input.maxSpendPerActionUsd,
       approvalThresholdUsd: input.approvalThresholdUsd,
