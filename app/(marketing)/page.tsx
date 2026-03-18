@@ -3,7 +3,7 @@ import { ArrowRight, Radar, Shield, Wallet } from "lucide-react";
 import { SessionButton } from "@/components/session-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getOptionalCurrentOrganizationContext } from "@/lib/session";
+import { getOptionalCurrentUser } from "@/lib/session";
 
 const pillars = [
   {
@@ -24,7 +24,7 @@ const pillars = [
 ];
 
 export default async function MarketingPage() {
-  const workspace = await getOptionalCurrentOrganizationContext();
+  const user = await getOptionalCurrentUser();
 
   return (
     <main className="min-h-screen">
@@ -43,12 +43,12 @@ export default async function MarketingPage() {
               </div>
               <div className="flex flex-wrap gap-3">
                 <Button asChild size="lg">
-                  <Link href={workspace ? "/dashboard" : "/signin"}>
-                    {workspace ? "Open dashboard" : "Open workspace"}
+                  <Link href={user ? "/dashboard" : "/signin"}>
+                    {user ? "Open dashboard" : "Open workspace"}
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
-                {workspace ? (
+                {user ? (
                   <Button asChild variant="secondary" size="lg">
                     <Link href="/demo">Run demo mode</Link>
                   </Button>
@@ -81,9 +81,9 @@ export default async function MarketingPage() {
         <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[1.2fr_0.8fr]">
           <Card>
             <CardHeader>
-              <CardTitle>{workspace ? workspace.organization.name : "Hackathon fit"}</CardTitle>
+              <CardTitle>{user ? "Your TreasuryPilot workspace" : "Hackathon fit"}</CardTitle>
               <CardDescription>
-                {workspace
+                {user
                   ? "This workspace is ready for a signed-in demo flow with policy controls, receipts, and approvals."
                   : "TreasuryPilot is intentionally shaped to satisfy both target tracks."}
               </CardDescription>

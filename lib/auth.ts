@@ -4,7 +4,6 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { appConfig } from "@/lib/config";
 import { prisma } from "@/lib/db";
-import { ensureUserOrganization } from "@/lib/services/organization-service";
 
 const providers = [];
 
@@ -90,12 +89,7 @@ export const authOptions = {
         return session;
       }
 
-      const workspace = await ensureUserOrganization(userId);
-
       session.user.id = userId;
-      session.user.organizationId = workspace.organization.id;
-      session.user.organizationName = workspace.organization.name;
-      session.user.membershipRole = workspace.membership.role;
 
       return session;
     }
@@ -108,9 +102,9 @@ export async function getServerAuthSession(): Promise<{ user?: AppSessionUser } 
 
 export type AppSessionUser = {
   id: string;
-  organizationId: string;
-  organizationName: string;
-  membershipRole: string;
+  organizationId?: string;
+  organizationName?: string;
+  membershipRole?: string;
   name?: string | null;
   email?: string | null;
   image?: string | null;

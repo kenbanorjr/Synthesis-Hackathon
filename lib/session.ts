@@ -2,14 +2,24 @@ import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
 import { ensureUserOrganization } from "@/lib/services/organization-service";
 
-export async function getOptionalCurrentOrganizationContext() {
+export async function getOptionalCurrentUser() {
   const session = await getServerAuthSession();
 
   if (!session?.user?.id) {
     return null;
   }
 
-  return ensureUserOrganization(session.user.id);
+  return session.user;
+}
+
+export async function getOptionalCurrentOrganizationContext() {
+  const user = await getOptionalCurrentUser();
+
+  if (!user?.id) {
+    return null;
+  }
+
+  return ensureUserOrganization(user.id);
 }
 
 export async function requireCurrentOrganizationContext() {
