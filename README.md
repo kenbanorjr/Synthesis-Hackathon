@@ -311,6 +311,29 @@ npm test
 npm run build
 ```
 
+## Submission Readiness
+
+The repo now covers the product-side requirements for Synthesis:
+
+- meaningful multi-agent workflow
+- working demo path
+- public-repo-friendly structure
+- explicit receipts and auditability
+- collaboration-ready docs
+
+Before you submit, use:
+
+- [SUBMISSION_CHECKLIST.md](./SUBMISSION_CHECKLIST.md)
+- [CONVERSATION_LOG_TEMPLATE.md](./CONVERSATION_LOG_TEMPLATE.md)
+
+Some submission items are still external and manual:
+
+- joining the official Telegram
+- keeping the GitHub repo public and current
+- deploying the app
+- collecting on-chain artifact links
+- filling the final `conversationLog` in the submission flow
+
 ## Deployment Notes
 
 - Recommended stack:
