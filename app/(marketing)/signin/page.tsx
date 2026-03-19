@@ -1,8 +1,8 @@
-import { redirect } from "next/navigation";
+import Link from "next/link";
 import { SessionButton } from "@/components/session-button";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { appConfig } from "@/lib/config";
-import { getOptionalCurrentUser } from "@/lib/session";
 
 function resolveAuthError(error?: string | string[]) {
   const value = Array.isArray(error) ? error[0] : error;
@@ -31,12 +31,6 @@ export default async function SignInPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const user = await getOptionalCurrentUser();
-
-  if (user) {
-    redirect("/dashboard");
-  }
-
   const params = searchParams ? await searchParams : {};
   const googleReady = Boolean(appConfig.auth.googleClientId && appConfig.auth.googleClientSecret);
   const authError = resolveAuthError(params.error);
@@ -45,15 +39,23 @@ export default async function SignInPage({
     <main className="flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
       <Card className="w-full max-w-xl">
         <CardHeader>
-          <CardTitle>Sign in to TreasuryPilot</CardTitle>
+          <CardTitle>Optional sign-in</CardTitle>
           <CardDescription>
-            Use Google OAuth for production-style access. In local development, you can also use the built-in demo workspace sign-in.
+            TreasuryPilot is open for the hackathon. Use the direct links below, or optionally sign in with Google if you want a production-style auth flow.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="rounded-[1.5rem] bg-muted/70 p-5 text-sm text-muted-foreground">
-            <p>Workspace access is organization-scoped.</p>
-            <p className="mt-2">The first successful sign-in automatically creates a default treasury workspace with policy, integration, and execution settings.</p>
+            <p>The live demo no longer requires authentication.</p>
+            <p className="mt-2">Use the shared demo workspace to explore the dashboard, run the workflow, and inspect receipts immediately.</p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Button asChild>
+              <Link href="/dashboard">Open dashboard</Link>
+            </Button>
+            <Button asChild variant="secondary">
+              <Link href="/demo">Run demo mode</Link>
+            </Button>
           </div>
           {authError ? (
             <div className="rounded-[1.5rem] border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive">
@@ -75,7 +77,7 @@ export default async function SignInPage({
           </div>
           {!googleReady ? (
             <p className="text-sm text-muted-foreground">
-              Google OAuth is not configured yet. Set `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET` for production access.
+              Google OAuth is not required for the hackathon flow. Set `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET` only if you still want production auth.
             </p>
           ) : null}
         </CardContent>

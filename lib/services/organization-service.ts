@@ -215,3 +215,38 @@ export async function ensureUserOrganization(userId: string): Promise<Organizati
     executionSettings
   };
 }
+
+export async function ensureDemoOrganizationContext(): Promise<OrganizationContext> {
+  const demoUser = await prisma.user.upsert({
+    where: {
+      email: appConfig.demoUserEmail
+    },
+    update: {
+      name: "TreasuryPilot Demo Operator"
+    },
+    create: {
+      email: appConfig.demoUserEmail,
+      name: "TreasuryPilot Demo Operator"
+    }
+  });
+
+  const workspace = await ensureUserOrganization(demoUser.id);
+
+  if (workspace.organization.name !== "TreasuryPilot Demo Workspace") {
+    const organization = await prisma.organization.update({
+      where: {
+        id: workspace.organization.id
+      },
+      data: {
+        name: "TreasuryPilot Demo Workspace"
+      }
+    });
+
+    return {
+      ...workspace,
+      organization
+    };
+  }
+
+  return workspace;
+}

@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
-import { ensureUserOrganization } from "@/lib/services/organization-service";
+import { ensureDemoOrganizationContext, ensureUserOrganization } from "@/lib/services/organization-service";
 
 export async function getOptionalCurrentUser() {
   const session = await getServerAuthSession();
@@ -15,29 +14,17 @@ export async function getOptionalCurrentUser() {
 export async function getOptionalCurrentOrganizationContext() {
   const user = await getOptionalCurrentUser();
 
-  if (!user?.id) {
-    return null;
+  if (user?.id) {
+    return ensureUserOrganization(user.id);
   }
 
-  return ensureUserOrganization(user.id);
+  return ensureDemoOrganizationContext();
 }
 
 export async function requireCurrentOrganizationContext() {
-  const workspace = await getOptionalCurrentOrganizationContext();
-
-  if (!workspace) {
-    redirect("/signin");
-  }
-
-  return workspace;
+  return getOptionalCurrentOrganizationContext();
 }
 
 export async function requireApiOrganizationContext() {
-  const workspace = await getOptionalCurrentOrganizationContext();
-
-  if (!workspace) {
-    throw new Error("Unauthorized");
-  }
-
-  return workspace;
+  return getOptionalCurrentOrganizationContext();
 }

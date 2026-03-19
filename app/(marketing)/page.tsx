@@ -2,7 +2,6 @@ import Link from "next/link";
 import { ArrowRight, Radar, Shield, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getOptionalCurrentUser } from "@/lib/session";
 
 const pillars = [
   {
@@ -23,10 +22,6 @@ const pillars = [
 ];
 
 export default async function MarketingPage() {
-  const user = await getOptionalCurrentUser();
-  const dashboardHref = user ? "/dashboard" : "/signin?callbackUrl=%2Fdashboard";
-  const demoHref = user ? "/demo" : "/signin?callbackUrl=%2Fdemo";
-
   return (
     <main className="min-h-screen">
       <section className="relative overflow-hidden px-4 pb-16 pt-8 sm:px-6 lg:px-8">
@@ -42,13 +37,13 @@ export default async function MarketingPage() {
                 </p>
               <div className="flex flex-wrap gap-3 pt-2">
                 <Button asChild size="lg">
-                  <Link href={dashboardHref}>
+                  <Link href="/dashboard">
                     Open dashboard
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
                 <Button asChild variant="secondary" size="lg">
-                  <Link href={demoHref}>Run demo mode</Link>
+                  <Link href="/demo">Run demo mode</Link>
                 </Button>
               </div>
             </div>
@@ -76,11 +71,9 @@ export default async function MarketingPage() {
         <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[1.2fr_0.8fr]">
           <Card>
             <CardHeader>
-              <CardTitle>{user ? "Your TreasuryPilot workspace" : "Hackathon fit"}</CardTitle>
+              <CardTitle>Hackathon fit</CardTitle>
               <CardDescription>
-                {user
-                  ? "This workspace is ready for a signed-in demo flow with policy controls, receipts, and approvals."
-                  : "TreasuryPilot is intentionally shaped to satisfy both target tracks."}
+                TreasuryPilot is intentionally shaped to satisfy both target tracks without requiring sign-in first.
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 sm:grid-cols-2">

@@ -2,7 +2,6 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { MobileNav } from "@/components/mobile-nav";
-import { SessionButton } from "@/components/session-button";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/db";
 import { requireCurrentOrganizationContext } from "@/lib/session";
@@ -37,7 +36,6 @@ export default async function DashboardLayout({ children }: { children: ReactNod
               <Button asChild size="sm" variant="outline">
                 <Link href="/">Back to landing</Link>
               </Button>
-              <SessionButton action="signOut" variant="outline" />
             </div>
           </div>
         </header>

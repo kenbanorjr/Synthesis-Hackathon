@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { LayoutDashboard, Shield, Radar, Bot, Receipt, PlayCircle } from "lucide-react";
 import { navItems } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import { SessionButton } from "@/components/session-button";
 
 const icons = [LayoutDashboard, Shield, Radar, Bot, Receipt, PlayCircle] as const;
 
@@ -70,8 +69,8 @@ export function AppSidebar({
           <p>OpenServ powers the multi-agent workflow.</p>
           <p>Locus handles spend controls, wallets, approvals, and receipts.</p>
         </div>
-        <div className="mt-5">
-          <SessionButton action="signOut" variant="secondary" />
+        <div className="mt-5 rounded-2xl bg-white/10 px-4 py-3 text-sm text-slate-200">
+          Hackathon mode is open by default. Optional auth can be added back later for per-org access.
         </div>
       </div>
     </aside>
