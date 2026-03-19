@@ -1,7 +1,12 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { toast } from "sonner";
 import { PolicyForm } from "@/components/policy-form";
 
 describe("PolicyForm", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("submits updated policy values", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -15,7 +20,7 @@ describe("PolicyForm", () => {
           monthlyBudgetUsd: 1500,
           maxSpendPerActionUsd: 500,
           approvalThresholdUsd: 180,
-          allowedProviders: ["locus-analytics"],
+          allowedProviders: ["exa"],
           allowedActions: ["BUY_ANALYTICS", "SWITCH_STRATEGY"],
           autoExecuteLowRisk: false
         }}
@@ -25,7 +30,7 @@ describe("PolicyForm", () => {
     fireEvent.change(screen.getByLabelText(/Monthly Budget/i), {
       target: { value: "1800" }
     });
-    fireEvent.click(screen.getByRole("button", { name: /gauntlet/i }));
+    fireEvent.click(screen.getByRole("button", { name: /firecrawl/i }));
     fireEvent.click(screen.getByRole("button", { name: /Save policy/i }));
 
     await waitFor(() => {
@@ -43,7 +48,8 @@ describe("PolicyForm", () => {
     };
 
     expect(payload.monthlyBudgetUsd).toBe(1800);
-    expect(payload.allowedProviders).toEqual(expect.arrayContaining(["gauntlet"]));
+    expect(payload.allowedProviders).toEqual(expect.arrayContaining(["firecrawl"]));
+    expect(toast.success).toHaveBeenCalledWith("Policy saved.", { duration: 2500 });
   });
 
   it("preserves and adds custom providers", async () => {
@@ -83,5 +89,39 @@ describe("PolicyForm", () => {
     };
 
     expect(payload.allowedProviders).toEqual(expect.arrayContaining(["custom-alpha", "vault-guardian"]));
+  });
+
+  it("removes custom providers from the saved payload", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: {}, error: null })
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <PolicyForm
+        policy={{
+          monthlyBudgetUsd: 1500,
+          maxSpendPerActionUsd: 500,
+          approvalThresholdUsd: 180,
+          allowedProviders: ["custom-alpha", "exa"],
+          allowedActions: ["BUY_ANALYTICS", "SWITCH_STRATEGY"],
+          autoExecuteLowRisk: false
+        }}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Remove custom-alpha/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Save policy/i }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalled();
+    });
+
+    const payload = JSON.parse(fetchMock.mock.calls[0][1].body as string) as {
+      allowedProviders: string[];
+    };
+
+    expect(payload.allowedProviders).not.toContain("custom-alpha");
   });
 });

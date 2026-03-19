@@ -2,19 +2,28 @@ export const dynamic = "force-dynamic";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BudgetUsageCard } from "@/components/budget-usage-card";
+import { IntegrationStatusCard } from "@/components/integration-status-card";
 import { LatestRecommendationCard } from "@/components/latest-recommendation-card";
 import { MetricCard } from "@/components/metric-card";
 import { PageHeader } from "@/components/page-header";
 import { ReceiptsTable } from "@/components/receipts-table";
 import { StrategyOverviewCard } from "@/components/strategy-overview-card";
 import { WorkflowTimeline } from "@/components/workflow-timeline";
+import { getSystemHealth } from "@/lib/services/health-service";
 import { getDashboardData } from "@/lib/services/dashboard-service";
 import { formatCurrency } from "@/lib/formatters";
 import { requireCurrentOrganizationContext } from "@/lib/session";
 
 export default async function DashboardPage() {
   const workspace = await requireCurrentOrganizationContext();
-  const dashboard = await getDashboardData(workspace.organization.id);
+  const [dashboard, health] = await Promise.all([
+    getDashboardData(workspace.organization.id),
+    getSystemHealth({
+      openservMode: workspace.integrationSettings.openservMode,
+      locusMode: workspace.integrationSettings.locusMode,
+      executionSettings: workspace.executionSettings
+    })
+  ]);
 
   return (
     <>
@@ -31,7 +40,14 @@ export default async function DashboardPage() {
 
       <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
         <StrategyOverviewCard strategy={dashboard.primaryStrategy} />
-        <BudgetUsageCard budget={dashboard.budget} />
+        <div className="space-y-6">
+          <BudgetUsageCard budget={dashboard.budget} />
+          <IntegrationStatusCard
+            health={health}
+            settings={dashboard.integrationSettings}
+            receipts={dashboard.recentReceipts}
+          />
+        </div>
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">

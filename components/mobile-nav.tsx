@@ -6,7 +6,7 @@ import { navItems } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
-export function MobileNav() {
+export function MobileNav({ badgeCounts }: { badgeCounts?: Partial<Record<string, number>> }) {
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -21,11 +21,24 @@ export function MobileNav() {
             <h2 className="mt-2 text-2xl font-semibold">Control room</h2>
           </div>
           <nav className="space-y-2">
-            {navItems.map((item) => (
-              <Link key={item.href} href={item.href} className="block rounded-2xl px-4 py-3 text-sm font-medium hover:bg-muted">
-                {item.label}
-              </Link>
-            ))}
+            {navItems.map((item) => {
+              const badgeCount = badgeCounts?.[item.href];
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium hover:bg-muted"
+                >
+                  <span>{item.label}</span>
+                  {typeof badgeCount === "number" ? (
+                    <span className="ml-auto inline-flex min-w-6 items-center justify-center rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                      {badgeCount}
+                    </span>
+                  ) : null}
+                </Link>
+              );
+            })}
           </nav>
         </div>
       </SheetContent>

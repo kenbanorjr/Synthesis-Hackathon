@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { ArrowRight, Radar, Shield, Wallet } from "lucide-react";
-import { SessionButton } from "@/components/session-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getOptionalCurrentUser } from "@/lib/session";
@@ -25,12 +24,14 @@ const pillars = [
 
 export default async function MarketingPage() {
   const user = await getOptionalCurrentUser();
+  const dashboardHref = user ? "/dashboard" : "/signin?callbackUrl=%2Fdashboard";
+  const demoHref = user ? "/demo" : "/signin?callbackUrl=%2Fdemo";
 
   return (
     <main className="min-h-screen">
       <section className="relative overflow-hidden px-4 pb-16 pt-8 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <div className="rounded-[2rem] border border-white/70 bg-slate-950 px-6 py-8 text-white shadow-panel sm:px-10 sm:py-10">
+          <div className="relative z-10 rounded-[2rem] border border-white/70 bg-slate-950 px-6 py-8 text-white shadow-panel sm:px-10 sm:py-10">
             <div className="flex flex-col gap-12 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-3xl space-y-6">
                 <p className="text-xs font-semibold uppercase tracking-[0.3em] text-cyan-300">TreasuryPilot</p>
@@ -41,24 +42,20 @@ export default async function MarketingPage() {
                   TreasuryPilot watches vault strategies, researches better opportunities, optionally buys premium analytics through Locus, and recommends or executes bounded actions backed by OpenServ workflows.
                 </p>
               </div>
-              <div className="flex flex-wrap gap-3">
+              <div className="relative z-20 flex flex-wrap gap-3">
                 <Button asChild size="lg">
-                  <Link href={user ? "/dashboard" : "/signin"}>
-                    {user ? "Open dashboard" : "Open workspace"}
+                  <Link href={dashboardHref}>
+                    Open dashboard
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
-                {user ? (
-                  <Button asChild variant="secondary" size="lg">
-                    <Link href="/demo">Run demo mode</Link>
-                  </Button>
-                ) : (
-                  <SessionButton action="signIn" provider="google" callbackUrl="/dashboard" variant="secondary" />
-                )}
+                <Button asChild variant="secondary" size="lg">
+                  <Link href={demoHref}>Run demo mode</Link>
+                </Button>
               </div>
             </div>
           </div>
-          <div className="-mt-10 grid gap-5 lg:grid-cols-3">
+          <div className="relative z-0 -mt-10 grid gap-5 lg:grid-cols-3">
             {pillars.map((pillar, index) => {
               const Icon = pillar.icon;
               return (

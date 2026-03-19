@@ -41,66 +41,91 @@ export class MockLocusAdapter implements LocusAdapter {
     if (!request.allowedProviders.includes(request.provider)) {
       return {
         provider: request.provider,
+        endpoint: request.endpoint,
         purpose: request.purpose,
-        amountUsd: request.amountUsd,
+        amountUsd: request.estimatedCostUsd,
         currency: "USD",
         status: "rejected",
         reason: "Provider is not on the approved whitelist.",
-        metadata: request.metadata
+        metadata: {
+          ...request.metadata,
+          endpoint: request.endpoint,
+          transport: "mock-locus"
+        }
       };
     }
 
-    if (request.amountUsd > request.budgetSnapshot.maxSpendPerActionUsd) {
+    if (request.estimatedCostUsd > request.budgetSnapshot.maxSpendPerActionUsd) {
       return {
         provider: request.provider,
+        endpoint: request.endpoint,
         purpose: request.purpose,
-        amountUsd: request.amountUsd,
+        amountUsd: request.estimatedCostUsd,
         currency: "USD",
         status: "rejected",
         reason: "Requested spend exceeds the max spend per action.",
-        metadata: request.metadata
+        metadata: {
+          ...request.metadata,
+          endpoint: request.endpoint,
+          transport: "mock-locus"
+        }
       };
     }
 
-    if (request.amountUsd > request.budgetSnapshot.remainingBudgetUsd) {
+    if (request.estimatedCostUsd > request.budgetSnapshot.remainingBudgetUsd) {
       return {
         provider: request.provider,
+        endpoint: request.endpoint,
         purpose: request.purpose,
-        amountUsd: request.amountUsd,
+        amountUsd: request.estimatedCostUsd,
         currency: "USD",
         status: "rejected",
         reason: "Requested spend exceeds the remaining monthly budget.",
-        metadata: request.metadata
+        metadata: {
+          ...request.metadata,
+          endpoint: request.endpoint,
+          transport: "mock-locus"
+        }
       };
     }
 
-    if (request.amountUsd > request.budgetSnapshot.approvalThresholdUsd) {
+    if (request.estimatedCostUsd > request.budgetSnapshot.approvalThresholdUsd) {
+      const pendingApprovalId = `locus-pending-${crypto.randomUUID()}`;
       return {
         provider: request.provider,
+        endpoint: request.endpoint,
         purpose: request.purpose,
-        amountUsd: request.amountUsd,
+        amountUsd: request.estimatedCostUsd,
         currency: "USD",
         status: "pending_approval",
         reason: "Purchase is within budget but requires approval.",
-        externalTxId: `locus-pending-${crypto.randomUUID()}`,
+        externalTxId: pendingApprovalId,
         metadata: {
           ...request.metadata,
-          managedWalletRef: request.budgetSnapshot.managedWalletRef
+          approvalUrl: `https://app.paywithlocus.com/approve/${pendingApprovalId}`,
+          endpoint: request.endpoint,
+          managedWalletRef: request.budgetSnapshot.managedWalletRef,
+          requestBody: request.requestBody,
+          transport: "mock-locus"
         }
       };
     }
 
     return {
       provider: request.provider,
+      endpoint: request.endpoint,
       purpose: request.purpose,
-      amountUsd: request.amountUsd,
+      amountUsd: request.estimatedCostUsd,
       currency: "USD",
       status: "completed",
       reason: request.reason,
       externalTxId: `locus-tx-${crypto.randomUUID()}`,
       metadata: {
         ...request.metadata,
-        managedWalletRef: request.budgetSnapshot.managedWalletRef
+        endpoint: request.endpoint,
+        managedWalletRef: request.budgetSnapshot.managedWalletRef,
+        requestBody: request.requestBody,
+        transport: "mock-locus"
       }
     };
   }

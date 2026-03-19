@@ -23,10 +23,10 @@ const defaultCatalog: OpportunitySnapshot[] = [
     assetSymbol: "USDC",
     estimatedYield: 7.9,
     riskScore: 31,
-    provider: "locus-analytics",
+    provider: "exa",
     actionType: ActionType.SWITCH_STRATEGY,
     summary: "A whitelisted vault with a stronger risk-adjusted USDC yield.",
-    premiumProviderCostUsd: 84
+    premiumProviderCostUsd: 0.12
   },
   {
     id: "aave-reserve",
@@ -36,10 +36,10 @@ const defaultCatalog: OpportunitySnapshot[] = [
     assetSymbol: "USDC",
     estimatedYield: 6.4,
     riskScore: 28,
-    provider: "gauntlet",
+    provider: "exa",
     actionType: ActionType.REBALANCE,
     summary: "A lower-volatility option that stabilizes treasury cash management.",
-    premiumProviderCostUsd: 59
+    premiumProviderCostUsd: 0.09
   },
   {
     id: "delta-hedge",
@@ -49,10 +49,10 @@ const defaultCatalog: OpportunitySnapshot[] = [
     assetSymbol: "USDC",
     estimatedYield: 5.9,
     riskScore: 44,
-    provider: "defillama-pro",
+    provider: "exa",
     actionType: ActionType.HEDGE_POSITION,
     summary: "Protects downside with a bounded hedge if volatility is expanding.",
-    premiumProviderCostUsd: 72
+    premiumProviderCostUsd: 0.14
   }
 ];
 
@@ -71,10 +71,10 @@ export function getOpportunityCatalog(strategy: MonitoredStrategy) {
         assetSymbol: String(entry.assetSymbol ?? strategy.assetSymbol),
         estimatedYield: Number(entry.estimatedYield ?? strategy.targetYield),
         riskScore: Number(entry.riskScore ?? strategy.riskScore),
-        provider: String(entry.provider ?? "locus-analytics"),
+        provider: String(entry.provider ?? "exa"),
         actionType: (entry.actionType as ActionType) ?? ActionType.SWITCH_STRATEGY,
         summary: String(entry.summary ?? "Imported opportunity candidate."),
-        premiumProviderCostUsd: Number(entry.premiumProviderCostUsd ?? 80)
+        premiumProviderCostUsd: Number(entry.premiumProviderCostUsd ?? 0.12)
       }));
   }
 

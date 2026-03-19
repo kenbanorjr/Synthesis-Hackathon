@@ -26,6 +26,7 @@ export const appConfig = {
   openservMode: resolveMode(process.env.OPENSERV_MODE, defaultIntegrationMode),
   openservBaseUrl: process.env.OPENSERV_BASE_URL ?? "https://api.openserv.ai",
   openservApiKey: process.env.OPENSERV_API_KEY ?? "",
+  openservAuthToken: process.env.OPENSERV_AUTH_TOKEN ?? "",
   locusMode: resolveMode(process.env.LOCUS_MODE, defaultIntegrationMode),
   locusBaseUrl: process.env.LOCUS_BASE_URL ?? "https://api.paywithlocus.com/api",
   locusApiKey: process.env.LOCUS_API_KEY ?? "",

@@ -1,4 +1,5 @@
 import { MockOpenServAdapter } from "@/lib/integrations/openserv/mock-openserv";
+import { appConfig } from "@/lib/config";
 import type {
   IntegrationHealth,
   OpenServAdapter,
@@ -15,57 +16,29 @@ export class RealOpenServAdapter implements OpenServAdapter {
 
   async health(): Promise<IntegrationHealth> {
     if (!this.baseUrl || !this.apiKey) {
-      return this.fallback.health();
-    }
-
-    try {
-      const response = await fetch(`${this.baseUrl}/health`, {
-        headers: {
-          Authorization: `Bearer ${this.apiKey}`
-        },
-        cache: "no-store"
-      });
-
-      if (!response.ok) {
-        return {
-          ok: false,
-          mode: "real",
-          message: "OpenServ endpoint is configured but unhealthy."
-        };
-      }
-
       return {
-        ok: true,
+        ok: false,
         mode: "real",
-        message: "OpenServ endpoint is reachable."
+        message: "OpenServ is in real mode but the agent secret or base URL is missing."
       };
-    } catch {
-      return this.fallback.health();
     }
+
+    if (!appConfig.appUrl) {
+      return {
+        ok: false,
+        mode: "real",
+        message: "OpenServ real mode requires NEXT_PUBLIC_APP_URL to publish the agent endpoint."
+      };
+    }
+
+    return {
+      ok: true,
+      mode: "real",
+      message: `OpenServ custom agent ingress is configured at ${appConfig.appUrl}${appConfig.openservIngressPath}.`
+    };
   }
 
   async runWorkflow(input: OpenServWorkflowInput): Promise<OpenServWorkflowOutput> {
-    if (!this.baseUrl || !this.apiKey) {
-      return this.fallback.runWorkflow(input);
-    }
-
-    try {
-      const response = await fetch(`${this.baseUrl}/workflows/treasury-pilot`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${this.apiKey}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(input)
-      });
-
-      if (!response.ok) {
-        return this.fallback.runWorkflow(input);
-      }
-
-      return (await response.json()) as OpenServWorkflowOutput;
-    } catch {
-      return this.fallback.runWorkflow(input);
-    }
+    return this.fallback.runWorkflow(input);
   }
 }

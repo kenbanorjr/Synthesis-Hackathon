@@ -52,20 +52,24 @@ export async function purchasePremiumAnalytics(input: {
   policy: TreasuryPolicy;
   settings: IntegrationSettings;
   provider: string;
+  endpoint: string;
   purpose: string;
-  amountUsd: number;
+  estimatedCostUsd: number;
   reason: string;
+  requestBody: Record<string, unknown>;
   metadata?: Record<string, unknown>;
 }) {
   const adapter = getLocusAdapter(input.settings.locusMode);
   const budgetSnapshot = await getBudgetSnapshot(input.policy, input.settings, input.organizationId);
   const result = await adapter.purchaseData({
     provider: input.provider,
+    endpoint: input.endpoint,
     purpose: input.purpose,
-    amountUsd: input.amountUsd,
+    estimatedCostUsd: input.estimatedCostUsd,
     reason: input.reason,
     allowedProviders: input.policy.allowedProviders,
     budgetSnapshot,
+    requestBody: input.requestBody,
     metadata: input.metadata
   });
 

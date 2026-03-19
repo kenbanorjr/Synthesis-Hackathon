@@ -26,11 +26,11 @@ TreasuryPilot is an org-first treasury operations app for builders, small teams,
 
 ### OpenServ
 
-TreasuryPilot now exposes a public OpenServ-facing ingress endpoint at `/api/openserv/agent`. The core workflow is still typed and provider-agnostic, but the deployed app can be registered as an agent endpoint and execute treasury workflows for a specific organization.
+TreasuryPilot exposes a public OpenServ-facing ingress endpoint at `/api/openserv/agent`. The route now accepts the real `type`-based OpenServ custom-agent envelope, responds to chat/task actions, and still keeps a legacy JSON trigger fallback for internal tools.
 
 ### Locus
 
-TreasuryPilot uses a typed Locus adapter for wallet references, budget snapshots, analytics purchases, receipts, and transaction history. In local/demo mode the mock adapter still enforces the same policy boundaries, so the workflow stays demoable without external credentials.
+TreasuryPilot uses a typed Locus adapter for wallet readiness, local budget enforcement, live wrapped-API purchases, receipts, and approval URLs. In local/demo mode the mock adapter still enforces the same policy boundaries, so the workflow stays demoable without external credentials.
 
 ## What Is Live vs Fallback
 
@@ -40,13 +40,14 @@ TreasuryPilot uses a typed Locus adapter for wallet references, budget snapshots
 - Prisma/Postgres data model
 - Google OAuth scaffolding through NextAuth
 - Organization-scoped policy, strategy, run, receipt, approval, and execution state
-- OpenServ ingress route
-- Locus/OpenServ adapter boundaries
+- OpenServ custom-agent ingress route with chat/task handling
+- Real Locus wrapped-API purchase path when `LOCUS_MODE=real`
+- Receipt metadata that records wrapped-provider endpoints and approval URLs
 
 ### Bounded or fallback
 
-- OpenServ outbound orchestration still falls back to the typed local workflow engine unless you wire your own OpenServ-connected orchestration path
-- Locus purchases use the typed real adapter when credentials and compatible endpoints are available; otherwise they fall back to the policy-enforcing mock adapter
+- Workflow orchestration still runs inside TreasuryPilot. OpenServ is the real ingress and callback rail, not the system's internal execution engine.
+- Locus purchases use the typed real adapter when credentials are available; otherwise they fall back to the policy-enforcing mock adapter
 - Execution is recorded and policy-bounded, but live execution stays dry-run-first by design until you explicitly enable it and wire a live transfer path
 
 ## Architecture
@@ -100,7 +101,7 @@ This is the recommended low-cost hackathon path for TreasuryPilot:
 2. Deploy the app on `Vercel Hobby`
 3. Add `Google OAuth` for production sign-in
 4. Register the deployed `/api/openserv/agent` URL in `OpenServ`
-5. Get a `Locus beta` key and credits, but keep `LOCUS_MODE=mock` until the beta adapter refactor lands
+5. Get a `Locus` agent API key and credits, then switch `LOCUS_MODE=real`
 
 ### Step 1: Neon
 
@@ -126,12 +127,13 @@ npm run db:seed
 - Import the GitHub repo into Vercel
 - Add the same env vars there
 - Deploy first with:
-  - `OPENSERV_MODE=mock`
-  - `LOCUS_MODE=mock`
+  - local/dev: `OPENSERV_MODE=mock`, `LOCUS_MODE=mock`
+  - production hackathon deploy: `OPENSERV_MODE=real`, `LOCUS_MODE=real`
   - `AUTH_ENABLE_DEMO=true` only if Google OAuth is not ready yet
 - After deploy, copy the production URL and set:
 
 ```env
+NEXTAUTH_URL="https://your-app.vercel.app"
 NEXT_PUBLIC_APP_URL="https://your-app.vercel.app"
 ```
 
@@ -161,9 +163,10 @@ AUTH_ENABLE_DEMO="false"
 - Add these env vars locally and in Vercel:
 
 ```env
-OPENSERV_MODE="mock"
+OPENSERV_MODE="real"
 OPENSERV_BASE_URL="https://api.openserv.ai"
-OPENSERV_API_KEY="your_openserv_agent_secret"
+OPENSERV_API_KEY="your_openserv_api_key"
+OPENSERV_AUTH_TOKEN="your_openserv_auth_token"
 ```
 
 - Register the deployed ingress URL in OpenServ:
@@ -172,21 +175,21 @@ OPENSERV_API_KEY="your_openserv_agent_secret"
 https://your-app.vercel.app/api/openserv/agent
 ```
 
-- Keep `OPENSERV_MODE=mock` for now. In this repo, `OPENSERV_MODE=real` drives the outbound adapter, and that adapter still expects a custom `/health` and `/workflows/treasury-pilot` service instead of the standard OpenServ API shape.
+- OpenServ sends the custom-agent action envelope to that route. TreasuryPilot authorizes inbound requests with `OPENSERV_AUTH_TOKEN`, acknowledges the action, and then reports results back to the OpenServ platform with `OPENSERV_API_KEY` sent in the `X-API-Key` header.
 
 ### Step 5: Locus Beta
 
-- Use the Locus hackathon beta docs to self-register your agent and request free credits
+- Use the Locus docs or dashboard to create an agent API key and request/fund credits
 - Save the returned API key securely
 - Add these env vars locally and in Vercel:
 
 ```env
-LOCUS_MODE="mock"
-LOCUS_BASE_URL="https://beta-api.paywithlocus.com"
-LOCUS_API_KEY="your_locus_beta_api_key"
+LOCUS_MODE="real"
+LOCUS_BASE_URL="https://api.paywithlocus.com/api"
+LOCUS_API_KEY="your_locus_agent_api_key"
 ```
 
-- Keep `LOCUS_MODE=mock` for now. The current real adapter still expects custom endpoints like `/wallets`, `/budgets/snapshot`, `/purchases`, and `/transactions`, so env vars alone are not enough to switch to live beta calls truthfully.
+- TreasuryPilot keeps budget policy local, but the research spend itself now uses the wrapped-API contract at `/wrapped/<provider>/<endpoint>`.
 
 ## Demo Flow
 
@@ -201,11 +204,37 @@ LOCUS_API_KEY="your_locus_beta_api_key"
 
 ## Environment Variables
 
+### Final production block
+
+```env
+DATABASE_URL="your_neon_connection_string"
+NEXTAUTH_URL="https://your-app.vercel.app"
+NEXT_PUBLIC_APP_URL="https://your-app.vercel.app"
+
+AUTH_SECRET="your_generated_secret"
+AUTH_GOOGLE_ID="your_google_client_id"
+AUTH_GOOGLE_SECRET="your_google_client_secret"
+AUTH_ENABLE_DEMO="true"
+DEMO_USER_EMAIL="demo@treasurypilot.local"
+
+OPENSERV_MODE="real"
+OPENSERV_BASE_URL="https://api.openserv.ai"
+OPENSERV_API_KEY="your_openserv_api_key"
+OPENSERV_AUTH_TOKEN="your_openserv_auth_token"
+
+LOCUS_MODE="real"
+LOCUS_BASE_URL="https://api.paywithlocus.com/api"
+LOCUS_API_KEY="your_locus_agent_api_key"
+```
+
 ### Required for local development
 
 - `DATABASE_URL`
   - What it is: your Postgres connection string
   - Where to get it: use the local Docker value from `.env.example`, or copy a hosted Postgres URL from Neon, Supabase, Railway, or another managed provider
+- `NEXTAUTH_URL`
+  - What it is: the auth callback base URL
+  - Local value: `http://localhost:3000`
 - `NEXT_PUBLIC_APP_URL`
   - What it is: the public app URL
   - Local value: `http://localhost:3000`
@@ -238,39 +267,43 @@ LOCUS_API_KEY="your_locus_beta_api_key"
 ### OpenServ
 
 - `OPENSERV_MODE`
-  - Recommended now: `mock`
-  - `real` only after you replace the current outbound shim with a standard OpenServ workflow path
+  - Local development: `mock`
+  - Production hackathon deploy: `real`
 - `OPENSERV_BASE_URL`
   - Default: `https://api.openserv.ai`
   - Where to get it: OpenServ docs and dashboard
 - `OPENSERV_API_KEY`
-  - What it is: your OpenServ agent secret key
-  - Where to get it: OpenServ Developer → Add Agent → Manage this agent → Create Secret Key
+  - What it is: the OpenServ API key TreasuryPilot uses when calling the OpenServ platform
+  - Where to get it: OpenServ agent creation success screen or OpenServ Developer → Your Agents → Details
+- `OPENSERV_AUTH_TOKEN`
+  - What it is: the inbound auth token OpenServ sends to your external agent endpoint
+  - Where to get it: OpenServ agent creation success screen
 
 To connect the deployed app to OpenServ:
 
 1. Deploy the app
 2. Copy the public URL of `/api/openserv/agent`
 3. Register that URL as the agent endpoint in OpenServ
-4. Use the OpenServ API key as the bearer token for requests into that route
-5. Leave `OPENSERV_MODE=mock` unless you also change the outbound adapter contract
+4. Save both the OpenServ API key and auth token in Vercel
+5. Let TreasuryPilot validate inbound requests with `OPENSERV_AUTH_TOKEN`
+6. Let TreasuryPilot call the OpenServ API with `OPENSERV_API_KEY`
+7. Leave workflow execution inside TreasuryPilot. OpenServ is the external ingress and callback rail.
 
 ### Locus
 
 - `LOCUS_MODE`
-  - Recommended now: `mock`
-  - `real` only after the real adapter is updated to the beta or production Locus endpoint contract you intend to use
+  - Local development: `mock`
+  - Production hackathon deploy: `real`
 - `LOCUS_BASE_URL`
-  - Beta: `https://beta-api.paywithlocus.com`
-  - Production: `https://api.paywithlocus.com/api`
+  - Recommended: `https://api.paywithlocus.com/api`
   - Where to get it: Locus docs
 - `LOCUS_API_KEY`
   - What it is: your Locus API key
   - Where to get it:
-    - beta hackathon path: self-register and request credits
+    - hackathon path: create an agent key and request credits
     - production path: Locus dashboard after creating a wallet and generating an API key
 
-If you enable live Locus usage later, fund the Locus wallet with USDC on Base or use available credits.
+When `LOCUS_MODE=real`, TreasuryPilot performs the paid research call through Locus wrapped APIs and records the endpoint, approval URL, and receipt metadata in the audit trail.
 
 ## API Surface
 
@@ -341,7 +374,7 @@ Some submission items are still external and manual:
   - Neon Postgres
   - Google OAuth
   - OpenServ ingress endpoint registration
-  - Locus beta key stored but still mocked until the adapter contract is refit
+  - Locus agent API key in `real` mode for wrapped research purchases
 - Set `NEXT_PUBLIC_APP_URL` to the deployed URL
 - Add the Google OAuth callback URL for your deployed domain
 - Run `npm run db:migrate` or `npm run db:push` during environment setup
@@ -350,6 +383,6 @@ Some submission items are still external and manual:
 
 ## Remaining Real-Integration Work
 
-- Wire a fully direct outbound OpenServ orchestration path if you want OpenServ to own more than the ingress trigger
-- Replace the current real Locus shim endpoints with the exact production endpoints you intend to use for analytics purchases and transfers
+- Wire a fully direct outbound OpenServ orchestration path if you want OpenServ to own more than the ingress trigger/callback rail
+- Expand Locus beyond wrapped research purchases into live transfers or other provider classes
 - Enable live execution only after you finalize provider allowlists, destinations, and funding

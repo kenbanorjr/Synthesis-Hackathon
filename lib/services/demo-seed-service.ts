@@ -2,7 +2,6 @@ import {
   ActionType,
   ApprovalStatus,
   DecisionOutcome,
-  IntegrationMode,
   Prisma,
   ReceiptStatus,
   RunStatus,
@@ -11,6 +10,7 @@ import {
   TriggerType,
   type PrismaClient
 } from "@prisma/client";
+import { appConfig } from "@/lib/config";
 import { defaultAllowedActions, defaultAllowedProviders } from "@/lib/constants";
 
 export async function seedDemoWorkspace(
@@ -91,19 +91,19 @@ export async function seedDemoWorkspace(
   await client.integrationSettings.upsert({
     where: { organizationId: input.organizationId },
     update: {
-      openservMode: IntegrationMode.MOCK,
-      locusMode: IntegrationMode.MOCK,
+      openservMode: appConfig.openservMode,
+      locusMode: appConfig.locusMode,
       demoMode: true,
-      managedWalletRef: "locus-demo-wallet",
-      openservEndpoint: null
+      managedWalletRef: appConfig.locusMode === "REAL" ? null : "locus-demo-wallet",
+      openservEndpoint: `${appConfig.appUrl}${appConfig.openservIngressPath}`
     },
     create: {
       organizationId: input.organizationId,
-      openservMode: IntegrationMode.MOCK,
-      locusMode: IntegrationMode.MOCK,
+      openservMode: appConfig.openservMode,
+      locusMode: appConfig.locusMode,
       demoMode: true,
-      managedWalletRef: "locus-demo-wallet",
-      openservEndpoint: null
+      managedWalletRef: appConfig.locusMode === "REAL" ? null : "locus-demo-wallet",
+      openservEndpoint: `${appConfig.appUrl}${appConfig.openservIngressPath}`
     }
   });
 
@@ -153,10 +153,10 @@ export async function seedDemoWorkspace(
             assetSymbol: "USDC",
             estimatedYield: 7.9,
             riskScore: 31,
-            provider: "locus-analytics",
+            provider: "exa",
             actionType: ActionType.SWITCH_STRATEGY,
             summary: "A whitelisted vault with stronger risk-adjusted yield.",
-            premiumProviderCostUsd: 84
+            premiumProviderCostUsd: 0.12
           },
           {
             id: "aave-reserve",
@@ -166,10 +166,10 @@ export async function seedDemoWorkspace(
             assetSymbol: "USDC",
             estimatedYield: 6.4,
             riskScore: 28,
-            provider: "gauntlet",
+            provider: "exa",
             actionType: ActionType.REBALANCE,
             summary: "Lower-volatility treasury reserve posture.",
-            premiumProviderCostUsd: 59
+            premiumProviderCostUsd: 0.09
           }
         ]
       }
@@ -239,14 +239,18 @@ export async function seedDemoWorkspace(
   await client.paymentReceipt.create({
     data: {
       agentRunId: historicalRun.id,
-      provider: "gauntlet",
-      purpose: "Reserve analytics snapshot",
-      amountUsd: new Prisma.Decimal(45),
+      provider: "exa",
+      purpose: "Reserve search snapshot",
+      amountUsd: new Prisma.Decimal(0.09),
       currency: "USD",
       status: ReceiptStatus.COMPLETED,
       externalTxId: "locus-historical-001",
       reason: "Treasury analytics spend stayed under the policy threshold.",
-      metadata: { managedWalletRef: "locus-demo-wallet" }
+      metadata: {
+        endpoint: "search",
+        managedWalletRef: appConfig.locusMode === "REAL" ? "locus-agent-demo" : "locus-demo-wallet",
+        transport: appConfig.locusMode === "REAL" ? "locus-wrapped-api" : "mock-locus"
+      }
     }
   });
 
@@ -295,20 +299,21 @@ export async function seedDemoWorkspace(
         input: { providers: [...defaultAllowedProviders] },
         output: {
           selectedOpportunity: "Morpho Prime USDC",
-          provider: "locus-analytics",
-          summary: "Premium analytics are needed to validate the migration before moving treasury capital."
+          provider: "exa",
+          endpoint: "search",
+          summary: "Wrapped API research is needed to validate the migration before moving treasury capital."
         },
         status: StepStatus.SUCCESS
       },
       {
         agentRunId: pendingRun.id,
         agentType: "RISK",
-        title: "Risk Agent enforced the approval threshold for the analytics purchase.",
+        title: "Risk Agent enforced the approval threshold for the research purchase.",
         input: { approvalThresholdUsd: 180, premiumDataCostUsd: 220 },
         output: {
           lowRisk: true,
           requiresApproval: true,
-          summary: "The strategy switch is low risk, but the analytics spend crosses the operator threshold."
+          summary: "The strategy switch is low risk, but the research spend crosses the operator threshold."
         },
         status: StepStatus.SUCCESS
       },
@@ -341,22 +346,27 @@ export async function seedDemoWorkspace(
   await client.paymentReceipt.create({
     data: {
       agentRunId: pendingRun.id,
-      provider: "locus-analytics",
-      purpose: "Forward-looking vault analytics",
+      provider: "exa",
+      purpose: "Forward-looking vault search",
       amountUsd: new Prisma.Decimal(220),
       currency: "USD",
       status: ReceiptStatus.PENDING_APPROVAL,
       externalTxId: "locus-pending-002",
-      reason: "Premium analytics spend requires a manual approval checkpoint.",
-      metadata: { managedWalletRef: "locus-demo-wallet" }
+      reason: "Wrapped API research spend requires a manual approval checkpoint.",
+      metadata: {
+        approvalUrl: "https://app.paywithlocus.com/approve/locus-pending-002",
+        endpoint: "search",
+        managedWalletRef: appConfig.locusMode === "REAL" ? "locus-agent-demo" : "locus-demo-wallet",
+        transport: appConfig.locusMode === "REAL" ? "locus-wrapped-api" : "mock-locus"
+      }
     }
   });
 
   await client.approvalRequest.create({
     data: {
       agentRunId: pendingRun.id,
-      title: "Approve premium analytics purchase",
-      reason: "The Research Agent wants to buy a deeper analytics packet before switching vaults.",
+      title: "Approve wrapped research purchase",
+      reason: "The Research Agent wants to buy a deeper research packet before switching vaults.",
       status: ApprovalStatus.PENDING
     }
   });
@@ -365,10 +375,10 @@ export async function seedDemoWorkspace(
     data: {
       agentRunId: pendingRun.id,
       headline: "Switch USDC reserves toward Morpho Prime after paid validation",
-      rationale: "The Research Agent found a higher-yield whitelisted venue, but the premium analytics packet needs operator approval first.",
-      proposedAction: "Approve the analytics packet, then switch a bounded slice of USDC from Spark into Morpho Prime.",
+      rationale: "The Research Agent found a higher-yield whitelisted venue, but the paid research packet needs operator approval first.",
+      proposedAction: "Approve the research packet, then switch a bounded slice of USDC from Spark into Morpho Prime.",
       expectedImpact: "Projected yield improves by roughly 3.8% while staying within the low-risk band.",
-      riskAssessment: "Low risk strategy migration, manual approval required for the analytics spend."
+      riskAssessment: "Low risk strategy migration, manual approval required for the research spend."
     }
   });
 
@@ -385,7 +395,7 @@ export async function seedDemoWorkspace(
       status: "PENDING_APPROVAL",
       dryRun: true,
       idempotencyKey: `seeded-${pendingRun.id}`,
-      rationale: "Execution is prepared as a dry run and awaits operator approval of the analytics spend.",
+      rationale: "Execution is prepared as a dry run and awaits operator approval of the research spend.",
       metadata: {
         source: "demo-seed"
       }

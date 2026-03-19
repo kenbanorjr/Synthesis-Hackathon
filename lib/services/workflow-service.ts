@@ -8,11 +8,11 @@ import {
   TriggerType
 } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { getOpenServAdapter } from "@/lib/integrations/openserv";
 import { getOpportunityCatalog } from "@/lib/services/opportunity-catalog";
 import { purchaseNeedsApproval, purchasePremiumAnalytics, getMonthlySpentUsd } from "@/lib/services/payment-service";
 import { evaluatePolicyGuardrails } from "@/lib/services/policy-service";
 import { getStrategyById } from "@/lib/services/strategy-service";
+import { runWorkflowEngine } from "@/lib/services/workflow-engine";
 import { decimalToNumber, serializeRun } from "@/lib/serializers";
 
 function toJson(value: unknown): Prisma.InputJsonValue {
@@ -99,8 +99,7 @@ export async function runAgentWorkflow(input: {
 
   const opportunities = getOpportunityCatalog(strategy);
   const monthlySpentUsd = await getMonthlySpentUsd(input.organizationId);
-  const openServ = getOpenServAdapter(settings.openservMode);
-  const workflow = await openServ.runWorkflow({
+  const workflow = await runWorkflowEngine({
     strategy: {
       id: strategy.id,
       name: strategy.name,
@@ -159,10 +158,13 @@ export async function runAgentWorkflow(input: {
       policy,
       settings,
       provider: workflow.research.premiumDataRequest.provider,
+      endpoint: workflow.research.premiumDataRequest.endpoint,
       purpose: workflow.research.premiumDataRequest.purpose,
-      amountUsd: workflow.research.premiumDataRequest.amountUsd,
+      estimatedCostUsd: workflow.research.premiumDataRequest.estimatedCostUsd,
       reason: workflow.research.premiumDataRequest.reason,
+      requestBody: workflow.research.premiumDataRequest.requestBody,
       metadata: {
+        ...workflow.research.premiumDataRequest.metadata,
         source: "research-agent",
         selectedOpportunity: workflow.research.selectedOpportunity?.id ?? null
       }
@@ -186,7 +188,7 @@ export async function runAgentWorkflow(input: {
   const guardrails = evaluatePolicyGuardrails({
     policy,
     monthlySpentUsd,
-    premiumDataCostUsd: workflow.research.premiumDataRequest?.amountUsd ?? 0,
+    premiumDataCostUsd: workflow.research.premiumDataRequest?.estimatedCostUsd ?? 0,
     executionCostUsd: workflow.execution.estimatedCostUsd,
     provider: workflow.research.premiumDataRequest?.provider,
     actionType: workflow.execution.actionType,

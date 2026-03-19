@@ -11,16 +11,19 @@ export interface LocusBudgetSnapshot {
 
 export interface LocusPurchaseRequest {
   provider: string;
+  endpoint: string;
   purpose: string;
-  amountUsd: number;
+  estimatedCostUsd: number;
   reason: string;
   allowedProviders: string[];
   budgetSnapshot: LocusBudgetSnapshot;
+  requestBody: Record<string, unknown>;
   metadata?: Record<string, unknown>;
 }
 
 export interface LocusPurchaseResult {
   provider: string;
+  endpoint: string;
   purpose: string;
   amountUsd: number;
   currency: "USD";

@@ -10,7 +10,7 @@ function buildPolicy(overrides: Partial<TreasuryPolicy> = {}): TreasuryPolicy {
     monthlyBudgetUsd: 1500 as never,
     maxSpendPerActionUsd: 500 as never,
     approvalThresholdUsd: 180 as never,
-    allowedProviders: ["locus-analytics", "gauntlet"],
+    allowedProviders: ["exa", "firecrawl"],
     allowedActions: [ActionType.BUY_ANALYTICS, ActionType.SWITCH_STRATEGY],
     autoExecuteLowRisk: false,
     createdAt: now,
@@ -26,7 +26,7 @@ describe("policySchema", () => {
         monthlyBudgetUsd: 1000,
         maxSpendPerActionUsd: 100,
         approvalThresholdUsd: 150,
-        allowedProviders: ["locus-analytics"],
+        allowedProviders: ["exa"],
         allowedActions: [ActionType.BUY_ANALYTICS],
         autoExecuteLowRisk: false
       })
@@ -41,7 +41,7 @@ describe("evaluatePolicyGuardrails", () => {
       monthlySpentUsd: 1490,
       premiumDataCostUsd: 25,
       executionCostUsd: 50,
-      provider: "defillama-pro",
+      provider: "resend",
       actionType: ActionType.SWITCH_STRATEGY,
       lowRisk: true
     });
@@ -61,7 +61,7 @@ describe("evaluatePolicyGuardrails", () => {
       monthlySpentUsd: 50,
       premiumDataCostUsd: 84,
       executionCostUsd: 220,
-      provider: "locus-analytics",
+      provider: "exa",
       actionType: ActionType.SWITCH_STRATEGY,
       lowRisk: true
     });

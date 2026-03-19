@@ -1,14 +1,23 @@
 export const dynamic = "force-dynamic";
 
 import { DemoActions } from "@/components/demo-actions";
+import { IntegrationStatusCard } from "@/components/integration-status-card";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getDashboardData } from "@/lib/services/dashboard-service";
+import { getSystemHealth } from "@/lib/services/health-service";
 import { requireCurrentOrganizationContext } from "@/lib/session";
 
 export default async function DemoPage() {
   const workspace = await requireCurrentOrganizationContext();
-  const dashboard = await getDashboardData(workspace.organization.id);
+  const [dashboard, health] = await Promise.all([
+    getDashboardData(workspace.organization.id),
+    getSystemHealth({
+      openservMode: workspace.integrationSettings.openservMode,
+      locusMode: workspace.integrationSettings.locusMode,
+      executionSettings: workspace.executionSettings
+    })
+  ]);
 
   return (
     <>
@@ -21,30 +30,35 @@ export default async function DemoPage() {
         <Card>
           <CardHeader>
             <CardTitle>Seeded scenario</CardTitle>
-            <CardDescription>The default path is designed to surface one premium analytics purchase and one actionable recommendation.</CardDescription>
+            <CardDescription>The default path is designed to surface one paid research call and one actionable recommendation.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-muted-foreground">
             <p>Strategy: USDC Yield Vault</p>
             <p>Trigger: yield dropped below target</p>
-            <p>Research: buy premium analytics through Locus</p>
+            <p>Research: buy wrapped-API research through Locus</p>
             <p>Risk: validate provider whitelist, action whitelist, budget, and approval threshold</p>
             <p>Outcome: recommend or gate a switch to a better whitelisted opportunity</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Current demo workspace</CardTitle>
-            <CardDescription>Quick facts you can point to before running the workflow live.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm text-muted-foreground">
-            <p>Monitored strategies: {dashboard.strategies.length}</p>
-            <p>Recent receipts: {dashboard.recentReceipts.length}</p>
-            <p>Recent agent runs: {dashboard.recentRuns.length}</p>
-            <p>OpenServ mode: {dashboard.integrationSettings.openservMode}</p>
-            <p>Locus mode: {dashboard.integrationSettings.locusMode}</p>
-          </CardContent>
-        </Card>
+        <IntegrationStatusCard
+          health={health}
+          settings={dashboard.integrationSettings}
+          receipts={dashboard.recentReceipts}
+        />
       </section>
+      <Card>
+        <CardHeader>
+          <CardTitle>Current demo workspace</CardTitle>
+          <CardDescription>Quick facts you can point to before running the workflow live.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm text-muted-foreground">
+          <p>Monitored strategies: {dashboard.strategies.length}</p>
+          <p>Recent receipts: {dashboard.recentReceipts.length}</p>
+          <p>Recent agent runs: {dashboard.recentRuns.length}</p>
+          <p>OpenServ mode: {dashboard.integrationSettings.openservMode}</p>
+          <p>Locus mode: {dashboard.integrationSettings.locusMode}</p>
+        </CardContent>
+      </Card>
     </>
   );
 }

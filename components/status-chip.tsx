@@ -12,6 +12,8 @@ const variants: Record<string, ComponentProps<typeof Badge>["variant"]> = {
   REJECTED: "destructive",
   FAILED: "destructive",
   ACTIVE: "default",
+  REAL: "info",
+  MOCK: "muted",
   AT_RISK: "warning",
   PAUSED: "muted"
 };

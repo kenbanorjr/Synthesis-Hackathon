@@ -30,14 +30,19 @@ export interface MonitorAgentOutput {
   severity: "low" | "medium" | "high";
 }
 
+export interface ResearchPremiumDataRequest {
+  provider: string;
+  endpoint: string;
+  purpose: string;
+  reason: string;
+  estimatedCostUsd: number;
+  requestBody: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
+}
+
 export interface ResearchAgentOutput {
   summary: string;
-  premiumDataRequest?: {
-    provider: string;
-    purpose: string;
-    amountUsd: number;
-    reason: string;
-  };
+  premiumDataRequest?: ResearchPremiumDataRequest;
   comparedOptions: OpportunitySnapshot[];
   selectedOpportunity: OpportunitySnapshot | null;
 }

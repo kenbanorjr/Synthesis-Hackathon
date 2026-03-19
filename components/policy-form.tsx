@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { X } from "lucide-react";
 import { z } from "zod";
 import { defaultAllowedProviders } from "@/lib/constants";
 import { actionLabel } from "@/lib/serializers";
@@ -50,7 +51,9 @@ export function PolicyForm({
   const selectedProviders = form.watch("allowedProviders") ?? [];
   const selectedActions = form.watch("allowedActions") ?? [];
   const autoExecuteLowRisk = form.watch("autoExecuteLowRisk");
-  const providerOptions = [...new Set([...selectedProviders, ...defaultAllowedProviders])];
+  const customProviders = selectedProviders.filter(
+    (provider) => !defaultAllowedProviders.includes(provider as (typeof defaultAllowedProviders)[number])
+  );
 
   async function onSubmit(values: PolicyInput) {
     setIsPending(true);
@@ -71,7 +74,7 @@ export function PolicyForm({
         return;
       }
 
-      toast.success("Treasury policy updated.");
+      toast.success("Policy saved.", { duration: 2500 });
       router.refresh();
       setIsPending(false);
     });
@@ -107,11 +110,28 @@ export function PolicyForm({
       return;
     }
 
+    if (defaultAllowedProviders.includes(provider as (typeof defaultAllowedProviders)[number])) {
+      form.setValue("allowedProviders", [...selectedProviders, provider], {
+        shouldDirty: true,
+        shouldValidate: true
+      });
+      setProviderDraft("");
+      return;
+    }
+
     form.setValue("allowedProviders", [...selectedProviders, provider], {
       shouldDirty: true,
       shouldValidate: true
     });
     setProviderDraft("");
+  }
+
+  function removeProvider(provider: string) {
+    form.setValue(
+      "allowedProviders",
+      selectedProviders.filter((value) => value !== provider),
+      { shouldDirty: true, shouldValidate: true }
+    );
   }
 
   return (
@@ -141,7 +161,7 @@ export function PolicyForm({
             <div className="space-y-3">
               <Label>Allowed providers</Label>
               <div className="flex flex-wrap gap-3">
-                {providerOptions.map((provider) => {
+                {defaultAllowedProviders.map((provider) => {
                   const active = selectedProviders.includes(provider);
                   return (
                     <button
@@ -158,6 +178,26 @@ export function PolicyForm({
                   );
                 })}
               </div>
+              {customProviders.length > 0 ? (
+                <div className="flex flex-wrap gap-3">
+                  {customProviders.map((provider) => (
+                    <div
+                      key={provider}
+                      className="inline-flex items-center gap-2 rounded-full border border-primary bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+                    >
+                      <span>{provider}</span>
+                      <button
+                        type="button"
+                        aria-label={`Remove ${provider}`}
+                        onClick={() => removeProvider(provider)}
+                        className="rounded-full p-0.5 transition hover:bg-white/15"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
               <div className="flex flex-col gap-3 sm:flex-row">
                 <Input
                   placeholder="Add custom provider"

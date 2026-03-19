@@ -4,11 +4,12 @@ describe("MockLocusAdapter", () => {
   it("rejects purchases that exceed the remaining budget", async () => {
     const adapter = new MockLocusAdapter();
     const result = await adapter.purchaseData({
-      provider: "locus-analytics",
-      purpose: "Premium analytics",
-      amountUsd: 200,
+      provider: "exa",
+      endpoint: "search",
+      purpose: "Premium research",
+      estimatedCostUsd: 200,
       reason: "Need deeper data.",
-      allowedProviders: ["locus-analytics"],
+      allowedProviders: ["exa"],
       budgetSnapshot: {
         managedWalletRef: "wallet_1",
         monthlyBudgetUsd: 150,
@@ -16,6 +17,9 @@ describe("MockLocusAdapter", () => {
         remainingBudgetUsd: 125,
         maxSpendPerActionUsd: 500,
         approvalThresholdUsd: 180
+      },
+      requestBody: {
+        query: "Morpho Prime USDC yield and liquidity"
       }
     });
 
@@ -26,11 +30,12 @@ describe("MockLocusAdapter", () => {
   it("creates a completed purchase result with a transaction id when within limits", async () => {
     const adapter = new MockLocusAdapter();
     const result = await adapter.purchaseData({
-      provider: "locus-analytics",
-      purpose: "Premium analytics",
-      amountUsd: 80,
+      provider: "exa",
+      endpoint: "search",
+      purpose: "Premium research",
+      estimatedCostUsd: 80,
       reason: "Need deeper data.",
-      allowedProviders: ["locus-analytics"],
+      allowedProviders: ["exa"],
       budgetSnapshot: {
         managedWalletRef: "wallet_1",
         monthlyBudgetUsd: 500,
@@ -38,6 +43,9 @@ describe("MockLocusAdapter", () => {
         remainingBudgetUsd: 475,
         maxSpendPerActionUsd: 500,
         approvalThresholdUsd: 180
+      },
+      requestBody: {
+        query: "Morpho Prime USDC yield and liquidity"
       }
     });
 

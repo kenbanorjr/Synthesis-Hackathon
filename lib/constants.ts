@@ -1,9 +1,8 @@
 import { ActionType } from "@prisma/client";
 
 export const defaultAllowedProviders = [
-  "locus-analytics",
-  "gauntlet",
-  "defillama-pro"
+  "exa",
+  "firecrawl"
 ] as const;
 
 export const defaultAllowedActions = [

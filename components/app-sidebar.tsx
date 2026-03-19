@@ -11,10 +11,12 @@ const icons = [LayoutDashboard, Shield, Radar, Bot, Receipt, PlayCircle] as cons
 
 export function AppSidebar({
   organizationName,
-  userLabel
+  userLabel,
+  badgeCounts
 }: {
   organizationName: string;
   userLabel: string;
+  badgeCounts?: Partial<Record<string, number>>;
 }) {
   const pathname = usePathname();
 
@@ -35,6 +37,7 @@ export function AppSidebar({
           {navItems.map((item, index) => {
             const Icon = icons[index];
             const active = pathname === item.href;
+            const badgeCount = badgeCounts?.[item.href];
             return (
               <Link
                 key={item.href}
@@ -46,6 +49,16 @@ export function AppSidebar({
               >
                 <Icon className="h-4 w-4" />
                 {item.label}
+                {typeof badgeCount === "number" ? (
+                  <span
+                    className={cn(
+                      "ml-auto inline-flex min-w-6 items-center justify-center rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                      active ? "bg-white/15 text-white" : "bg-muted text-muted-foreground"
+                    )}
+                  >
+                    {badgeCount}
+                  </span>
+                ) : null}
               </Link>
             );
           })}
