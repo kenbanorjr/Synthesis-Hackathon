@@ -31,9 +31,8 @@ export default async function MarketingPage() {
     <main className="min-h-screen">
       <section className="relative overflow-hidden px-4 pb-16 pt-8 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <div className="relative z-10 rounded-[2rem] border border-white/70 bg-slate-950 px-6 py-8 text-white shadow-panel sm:px-10 sm:py-10">
-            <div className="flex flex-col gap-12 lg:flex-row lg:items-end lg:justify-between">
-              <div className="max-w-3xl space-y-6">
+          <div className="relative z-10 rounded-[2rem] border border-white/70 bg-slate-950 px-6 py-8 text-white shadow-panel sm:px-10 sm:py-10 lg:px-12 lg:py-12">
+            <div className="max-w-4xl space-y-6">
                 <p className="text-xs font-semibold uppercase tracking-[0.3em] text-cyan-300">TreasuryPilot</p>
                 <h1 className="text-4xl font-semibold sm:text-5xl lg:text-6xl">
                   Multi-agent treasury operations with bounded automation and full spend receipts.
@@ -41,8 +40,7 @@ export default async function MarketingPage() {
                 <p className="max-w-2xl text-base text-slate-300 sm:text-lg">
                   TreasuryPilot watches vault strategies, researches better opportunities, optionally buys premium analytics through Locus, and recommends or executes bounded actions backed by OpenServ workflows.
                 </p>
-              </div>
-              <div className="relative z-20 flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-3 pt-2">
                 <Button asChild size="lg">
                   <Link href={dashboardHref}>
                     Open dashboard
@@ -55,7 +53,7 @@ export default async function MarketingPage() {
               </div>
             </div>
           </div>
-          <div className="relative z-0 -mt-10 grid gap-5 lg:grid-cols-3">
+          <div className="relative z-0 mt-6 grid gap-5 lg:grid-cols-3">
             {pillars.map((pillar, index) => {
               const Icon = pillar.icon;
               return (
