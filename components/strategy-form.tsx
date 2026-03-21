@@ -81,6 +81,7 @@ export function StrategyForm({
 }) {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<string | null>(null);
   const isEditing = mode === "edit" && Boolean(strategy?.id);
   const form = useForm<StrategyFormValues, undefined, StrategyInput>({
     resolver: zodResolver(strategySchema),
@@ -125,6 +126,7 @@ export function StrategyForm({
     }
 
     setIsPending(true);
+    setSaveStatus(isEditing ? "Saving changes to the active dossier." : "Creating a fresh monitored strategy dossier.");
     startTransition(async () => {
       const response = await fetch("/api/strategies", {
         method: "POST",
@@ -144,6 +146,7 @@ export function StrategyForm({
 
       if (!response.ok) {
         toast.error(payload.error?.message ?? "Failed to save strategy.");
+        setSaveStatus(payload.error?.message ?? "Failed to save strategy.");
         setIsPending(false);
         return;
       }
@@ -153,6 +156,7 @@ export function StrategyForm({
       }
 
       toast.success(isEditing ? "Strategy updated." : "Strategy saved.", { duration: 2500 });
+      setSaveStatus(isEditing ? "Strategy updated. The cockpit will use this brief on the next run." : "Strategy saved. The new dossier is ready for monitoring.");
       router.refresh();
       setIsPending(false);
     });
@@ -176,7 +180,14 @@ export function StrategyForm({
       </CardHeader>
       <CardContent>
         <form className="space-y-6" onSubmit={form.handleSubmit(onSubmit)}>
-          <div className="grid gap-4 md:grid-cols-2">
+          {saveStatus ? (
+            <div aria-live="polite" className="rounded-[1.35rem] border border-cyan-300/20 bg-slate-950 px-4 py-4 text-sm text-slate-100">
+              <p className="eyebrow text-cyan-200">Strategy status</p>
+              <p className="mt-2">{saveStatus}</p>
+            </div>
+          ) : null}
+
+          <div className="grid gap-4 rounded-[1.6rem] border border-slate-900/8 bg-slate-950 px-5 py-5 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="name">Strategy name</Label>
               <Input id="name" {...form.register("name")} />
@@ -226,7 +237,7 @@ export function StrategyForm({
               </Select>
             </div>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-2 rounded-[1.6rem] border border-slate-900/8 bg-card px-5 py-5">
             <Label htmlFor="metadata">Metadata JSON</Label>
             <Textarea
               id="metadata"

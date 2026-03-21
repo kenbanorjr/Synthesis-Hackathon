@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { LayoutDashboard, Shield, Radar, Bot, Receipt, PlayCircle } from "lucide-react";
 import { navItems } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -18,41 +19,64 @@ export function AppSidebar({
   badgeCounts?: Partial<Record<string, number>>;
 }) {
   const pathname = usePathname();
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPendingHref(null);
+  }, [pathname]);
 
   return (
-    <aside className="hidden w-72 shrink-0 flex-col justify-between border-r border-white/70 bg-white/70 p-6 backdrop-blur xl:flex">
+    <aside className="cockpit-shell hidden w-80 shrink-0 flex-col justify-between border-r border-white/10 p-6 text-slate-100 xl:flex">
       <div className="space-y-8">
-        <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-primary">TreasuryPilot</p>
-          <h2 className="text-2xl font-semibold">Agentic treasury ops</h2>
-          <p className="text-sm text-muted-foreground">OpenServ research, Locus spend controls, and full receipts in one cockpit.</p>
-          <div className="rounded-2xl border border-border/70 bg-muted/60 px-4 py-3">
-            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Workspace</p>
-            <p className="mt-2 font-medium text-foreground">{organizationName}</p>
-            <p className="mt-1 text-sm text-muted-foreground">{userLabel}</p>
+        <div className="space-y-4">
+          <div className="space-y-3">
+            <p className="eyebrow text-cyan-300">TreasuryPilot</p>
+            <h2 className="text-3xl font-semibold text-white">Agentic treasury desk</h2>
+            <p className="max-w-xs text-sm leading-6 text-slate-300">
+              OpenServ orchestration, Locus spend rails, and audit-ready receipts in one operational cockpit.
+            </p>
+          </div>
+          <div className="data-rail grid-fog overflow-hidden rounded-[1.55rem] p-5">
+            <p className="eyebrow text-slate-400">Workspace</p>
+            <p className="mt-4 text-lg font-semibold text-white">{organizationName}</p>
+            <p className="mt-1 text-sm text-slate-300">{userLabel}</p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <span className="status-capsule border-cyan-400/15 bg-cyan-400/10 text-cyan-200">Open rail</span>
+              <span className="status-capsule border-amber-300/15 bg-amber-300/10 text-amber-100">Bounded spend</span>
+            </div>
           </div>
         </div>
         <nav className="space-y-2">
           {navItems.map((item, index) => {
             const Icon = icons[index];
             const active = pathname === item.href;
+            const pending = pendingHref === item.href && !active;
             const badgeCount = badgeCounts?.[item.href];
             return (
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={() => setPendingHref(item.href)}
                 className={cn(
-                  "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition",
-                  active ? "bg-primary text-primary-foreground shadow-panel" : "hover:bg-muted"
+                  "group flex items-center gap-3 rounded-[1.2rem] border px-4 py-3 text-sm font-medium transition",
+                  active
+                    ? "border-cyan-300/20 bg-cyan-400 text-slate-950 shadow-panel"
+                    : pending
+                      ? "border-cyan-400/20 bg-white/8 text-white"
+                      : "border-white/5 bg-white/[0.03] text-slate-300 hover:border-white/10 hover:bg-white/[0.06] hover:text-white"
                 )}
               >
-                <Icon className="h-4 w-4" />
-                {item.label}
+                <Icon className={cn("h-4 w-4", active ? "text-slate-950" : pending ? "text-cyan-300" : "text-slate-400 group-hover:text-cyan-300")} />
+                <span>{item.label}</span>
                 {typeof badgeCount === "number" ? (
                   <span
                     className={cn(
-                      "ml-auto inline-flex min-w-6 items-center justify-center rounded-full px-2 py-0.5 text-[11px] font-semibold",
-                      active ? "bg-white/15 text-white" : "bg-muted text-muted-foreground"
+                      "mono-ui ml-auto inline-flex min-w-6 items-center justify-center rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                      active
+                        ? "bg-slate-950/10 text-slate-950"
+                        : pending
+                          ? "bg-white/10 text-cyan-200"
+                          : "bg-white/8 text-slate-300"
                     )}
                   >
                     {badgeCount}
@@ -63,13 +87,13 @@ export function AppSidebar({
           })}
         </nav>
       </div>
-      <div className="rounded-[1.5rem] bg-slate-950 p-5 text-slate-50">
-        <p className="text-xs uppercase tracking-[0.2em] text-slate-300">Tracks</p>
-        <div className="mt-3 space-y-2 text-sm">
+      <div className="data-rail rounded-[1.55rem] p-5">
+        <p className="eyebrow text-slate-400">Tracks</p>
+        <div className="mt-4 space-y-3 text-sm leading-6 text-slate-200">
           <p>OpenServ powers the multi-agent workflow.</p>
           <p>Locus handles spend controls, wallets, approvals, and receipts.</p>
         </div>
-        <div className="mt-5 rounded-2xl bg-white/10 px-4 py-3 text-sm text-slate-200">
+        <div className="mt-5 rounded-[1.2rem] border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
           Hackathon mode is open by default. Optional auth can be added back later for per-org access.
         </div>
       </div>

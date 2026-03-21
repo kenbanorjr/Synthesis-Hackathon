@@ -52,7 +52,7 @@ export default async function DashboardPage() {
 
       <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
         <LatestRecommendationCard latestRun={dashboard.latestRun} />
-        <Tabs defaultValue="timeline">
+        <Tabs defaultValue="timeline" className="space-y-4">
           <TabsList>
             <TabsTrigger value="timeline">Workflow Timeline</TabsTrigger>
             <TabsTrigger value="receipts">Recent Receipts</TabsTrigger>
@@ -61,7 +61,7 @@ export default async function DashboardPage() {
             {dashboard.latestRun ? (
               <WorkflowTimeline steps={dashboard.latestRun.steps as never} />
             ) : (
-              <div className="rounded-[1.5rem] border border-border/70 bg-white/70 p-5 text-sm text-muted-foreground">
+              <div className="paper-panel rounded-[1.5rem] p-5 text-sm text-muted-foreground">
                 No workflow has been triggered yet.
               </div>
             )}

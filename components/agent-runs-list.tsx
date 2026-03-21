@@ -106,13 +106,16 @@ export function AgentRunsList({ runs }: { runs: RunRecord[] }) {
         const badges = getRunBadges(run);
 
         return (
-          <Card key={run.id} className={cn(isExpanded ? "border-primary/40" : "")}>
+          <Card key={run.id} className={cn("overflow-hidden", isExpanded ? "border-cyan-300/30 shadow-[0_30px_80px_rgba(6,182,212,0.12)]" : "")}>
             <button type="button" className="w-full text-left" onClick={() => toggleRun(run.id)}>
-              <CardHeader>
+              <CardHeader className={cn("transition", isExpanded ? "bg-slate-950 text-white" : "bg-transparent")}>
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                   <div>
-                    <CardTitle>{run.recommendation?.headline ?? run.triggerSummary}</CardTitle>
-                    <CardDescription>
+                    <p className={cn("eyebrow", isExpanded ? "text-cyan-200" : "")}>Run dossier</p>
+                    <CardTitle className={cn("mt-3", isExpanded ? "text-white" : "")}>
+                      {run.recommendation?.headline ?? run.triggerSummary}
+                    </CardTitle>
+                    <CardDescription className={cn(isExpanded ? "text-slate-300" : "")}>
                       {run.strategy?.name} • {run.triggerSummary} • {formatDateTime(run.createdAt)}
                     </CardDescription>
                   </div>
@@ -128,26 +131,26 @@ export function AgentRunsList({ runs }: { runs: RunRecord[] }) {
             {isExpanded ? (
               <CardContent className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
                 <div className="space-y-4">
-                  <div className="rounded-[1.5rem] bg-muted/70 p-5">
-                    <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Rationale</p>
+                  <div className="ledger-strip">
+                    <p className="eyebrow">Rationale</p>
                     <p className="mt-3 text-sm text-foreground">{run.recommendation?.rationale ?? run.triggerSummary}</p>
                   </div>
-                  <div className="rounded-[1.5rem] bg-muted/70 p-5">
-                    <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Proposed Action</p>
+                  <div className="ledger-strip">
+                    <p className="eyebrow">Proposed action</p>
                     <p className="mt-3 text-sm text-foreground">{run.recommendation?.proposedAction ?? "No action proposed."}</p>
                   </div>
                   {run.receipts.length > 0 ? (
-                    <div className="rounded-[1.5rem] bg-muted/70 p-5">
+                    <div className="ink-panel rounded-[1.5rem] p-5 text-white">
                       <div className="flex items-center justify-between gap-4">
-                        <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Receipt Trail</p>
-                        <p className="text-xs text-muted-foreground">Locus-backed payment and policy audit</p>
+                        <p className="eyebrow text-cyan-200">Receipt trail</p>
+                        <p className="mono-ui text-[11px] uppercase tracking-[0.16em] text-slate-400">Locus-backed payment and policy audit</p>
                       </div>
                       <div className="mt-4 space-y-3">
                         {run.receipts.map((receipt) => (
-                          <div key={receipt.id} className="rounded-[1.15rem] border border-border/70 bg-white/80 p-4">
+                          <div key={receipt.id} className="rounded-[1.15rem] border border-white/10 bg-white/5 p-4">
                             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                               <div>
-                                <p className="font-medium text-foreground">
+                                <p className="font-medium text-white">
                                   {receipt.provider}
                                   {receipt.metadata &&
                                   typeof receipt.metadata === "object" &&
@@ -155,9 +158,9 @@ export function AgentRunsList({ runs }: { runs: RunRecord[] }) {
                                     ? `/${String((receipt.metadata as Record<string, unknown>).endpoint)}`
                                     : ""}
                                 </p>
-                                <p className="mt-1 text-sm text-foreground">{receipt.purpose}</p>
-                                <p className="mt-1 text-xs text-muted-foreground">{receipt.reason}</p>
-                                <p className="mt-2 text-xs text-muted-foreground">
+                                <p className="mt-1 text-sm text-slate-100">{receipt.purpose}</p>
+                                <p className="mt-1 text-xs text-slate-400">{receipt.reason}</p>
+                                <p className="mono-ui mt-2 text-[11px] uppercase tracking-[0.14em] text-slate-500">
                                   {formatDateTime(receipt.createdAt)}
                                   {receipt.externalTxId ? ` • ${receipt.externalTxId}` : ""}
                                 </p>
@@ -165,17 +168,17 @@ export function AgentRunsList({ runs }: { runs: RunRecord[] }) {
                                 typeof receipt.metadata === "object" &&
                                 typeof (receipt.metadata as Record<string, unknown>).approvalUrl === "string" ? (
                                   <a
-                                    href={String((receipt.metadata as Record<string, unknown>).approvalUrl)}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="mt-2 inline-flex text-xs font-medium text-primary underline-offset-4 hover:underline"
+                                  href={String((receipt.metadata as Record<string, unknown>).approvalUrl)}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                    className="mono-ui mt-2 inline-flex text-[11px] font-medium uppercase tracking-[0.14em] text-cyan-200 underline-offset-4 hover:underline"
                                   >
                                     Open approval in Locus
                                   </a>
                                 ) : null}
                               </div>
                               <div className="flex flex-col items-start gap-2 sm:items-end">
-                                <p className="text-sm font-semibold text-foreground">{formatCurrency(receipt.amountUsd)}</p>
+                                <p className="mono-ui text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">{formatCurrency(receipt.amountUsd)}</p>
                                 <StatusChip value={receipt.status} />
                               </div>
                             </div>
@@ -185,36 +188,36 @@ export function AgentRunsList({ runs }: { runs: RunRecord[] }) {
                     </div>
                   ) : null}
                   {run.approvalRequest ? (
-                    <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50 p-5">
+                    <div className="rounded-[1.5rem] border border-amber-400/20 bg-amber-300/10 p-5">
                       <div className="flex flex-wrap items-center justify-between gap-3">
-                        <p className="text-sm font-semibold text-amber-900">{run.approvalRequest.title}</p>
+                        <p className="text-sm font-semibold text-amber-100">{run.approvalRequest.title}</p>
                         <StatusChip value={run.approvalRequest.status} />
                       </div>
-                      <p className="mt-2 text-sm text-amber-800">{run.approvalRequest.reason}</p>
-                      <p className="mt-3 text-xs uppercase tracking-[0.18em] text-amber-700/80">
+                      <p className="mt-2 text-sm text-amber-50">{run.approvalRequest.reason}</p>
+                      <p className="mono-ui mt-3 text-[11px] uppercase tracking-[0.18em] text-amber-200/80">
                         Requested {formatDateTime(run.approvalRequest.requestedAt)}
                       </p>
                       {run.approvalRequest.status === "PENDING" ? (
                         <ApprovalActions approvalId={run.approvalRequest.id} />
                       ) : run.approvalRequest.resolvedAt ? (
-                        <p className="mt-4 text-sm text-amber-900">
+                        <p className="mt-4 text-sm text-amber-100">
                           Resolved {formatDateTime(run.approvalRequest.resolvedAt)}.
                         </p>
                       ) : null}
                     </div>
                   ) : null}
                   {run.executionRecords.length > 0 ? (
-                    <div className="rounded-[1.5rem] border border-emerald-200 bg-emerald-50 p-5">
+                    <div className="rounded-[1.5rem] border border-emerald-400/20 bg-emerald-300/10 p-5">
                       <div className="flex flex-wrap items-center justify-between gap-3">
-                        <p className="text-sm font-semibold text-emerald-900">Execution readiness</p>
+                        <p className="text-sm font-semibold text-emerald-100">Execution readiness</p>
                         <StatusChip value={run.executionRecords[0].status} />
                       </div>
-                      <p className="mt-3 text-sm text-emerald-900">
+                      <p className="mt-3 text-sm text-emerald-50">
                         {run.executionRecords[0].mode.replaceAll("_", " ")} via {run.executionRecords[0].provider} on{" "}
                         {run.executionRecords[0].chain} for {formatCurrency(run.executionRecords[0].amountUsd)}.
                       </p>
-                      <p className="mt-2 text-sm text-emerald-800">{run.executionRecords[0].rationale}</p>
-                      <p className="mt-3 text-xs uppercase tracking-[0.18em] text-emerald-700/80">
+                      <p className="mt-2 text-sm text-emerald-100">{run.executionRecords[0].rationale}</p>
+                      <p className="mono-ui mt-3 text-[11px] uppercase tracking-[0.18em] text-emerald-100/80">
                         Idempotency key {run.executionRecords[0].idempotencyKey}
                       </p>
                     </div>

@@ -63,36 +63,36 @@ export function IntegrationStatusCard({
         <CardDescription>Judge-facing proof that TreasuryPilot is wired to a real spend rail and a real agent ingress.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-5 text-sm">
-        <div className="rounded-[1.2rem] border border-border/70 bg-muted/60 p-4">
+        <div className="ink-panel p-5 text-slate-100">
           <div className="flex items-center justify-between gap-3">
-            <p className="font-medium text-foreground">OpenServ custom agent</p>
+            <p className="font-medium text-white">OpenServ custom agent</p>
             <StatusChip value={settings.openservMode} />
           </div>
-          <p className="mt-2 text-muted-foreground">{health.openserv.message}</p>
-          <p className="mt-2 text-xs text-muted-foreground">
+          <p className="mt-3 text-slate-300">{health.openserv.message}</p>
+          <p className="mono-ui mt-3 text-xs uppercase tracking-[0.18em] text-slate-400">
             Endpoint: {settings.openservEndpoint ?? "Generated from NEXT_PUBLIC_APP_URL after org bootstrap"}
           </p>
         </div>
 
-        <div className="rounded-[1.2rem] border border-border/70 bg-muted/60 p-4">
+        <div className="ledger-strip p-4">
           <div className="flex items-center justify-between gap-3">
             <p className="font-medium text-foreground">Locus spend rail</p>
             <StatusChip value={settings.locusMode} />
           </div>
           <p className="mt-2 text-muted-foreground">{health.locus.message}</p>
           <p className="mt-2 text-muted-foreground">{walletMessage}</p>
-          <p className="mt-2 text-xs text-muted-foreground">
+          <p className="mono-ui mt-3 text-xs uppercase tracking-[0.18em] text-slate-500">
             Live wrapped-API receipts captured: {liveReceiptCount}
           </p>
         </div>
 
-        <div className="rounded-[1.2rem] border border-border/70 bg-muted/60 p-4">
+        <div className="ledger-strip p-4">
           <div className="flex items-center justify-between gap-3">
             <p className="font-medium text-foreground">Execution rail</p>
             <StatusChip value={health.execution.liveExecutionEnabled ? "ACTIVE" : "PAUSED"} />
           </div>
           <p className="mt-2 text-muted-foreground">{health.execution.message}</p>
-          <p className="mt-2 text-xs text-muted-foreground">
+          <p className="mono-ui mt-3 text-xs uppercase tracking-[0.18em] text-slate-500">
             {health.execution.dryRunByDefault
               ? "Bounded execution stays dry-run-first in this hackathon build."
               : "Dry-run default is disabled for this organization."}

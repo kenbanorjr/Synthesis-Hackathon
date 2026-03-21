@@ -111,15 +111,15 @@ export function WorkflowTimeline({
           const highlights = getHighlights(step.output);
 
           return (
-            <div key={step.id} className="rounded-3xl border border-border/70 bg-white/70 p-4">
+            <div key={step.id} className="ledger-strip rounded-[1.35rem] p-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3">
-                  <div className="rounded-2xl bg-primary/10 p-2 text-primary">
+                  <div className="rounded-[1rem] bg-slate-950 p-2 text-cyan-300">
                     <Icon className="h-4 w-4" />
                   </div>
                   <div>
                     <p className="font-semibold">{step.title}</p>
-                    <p className="mt-1 text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                    <p className="mono-ui mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">
                       {step.agentType} • {formatDateTime(step.createdAt)}
                     </p>
                   </div>
@@ -140,7 +140,7 @@ export function WorkflowTimeline({
                 <summary className="cursor-pointer text-xs uppercase tracking-[0.18em] text-muted-foreground">
                   Raw structured output
                 </summary>
-                <pre className="mt-3 overflow-x-auto rounded-2xl bg-slate-950/95 p-4 text-xs text-slate-50">
+                <pre className="mt-3 overflow-x-auto rounded-[1.15rem] bg-slate-950/95 p-4 text-xs text-slate-50">
                   {JSON.stringify(step.output ?? null, null, 2)}
                 </pre>
               </details>

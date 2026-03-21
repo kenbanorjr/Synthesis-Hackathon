@@ -88,15 +88,16 @@ export function StrategiesManager({ strategies }: { strategies: StrategyRecord[]
                 }
               }}
               className={cn(
-                "cursor-pointer transition hover:border-primary/40 hover:bg-white/90",
-                isSelected ? "border-primary/60 ring-2 ring-primary/10" : ""
+                "cursor-pointer transition hover:border-cyan-300/30 hover:shadow-[0_24px_80px_rgba(6,182,212,0.1)]",
+                isSelected ? "border-cyan-300/30 bg-slate-950 text-white" : ""
               )}
             >
               <CardHeader>
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <CardTitle>{strategy.name}</CardTitle>
-                    <CardDescription>
+                    <p className={cn("eyebrow", isSelected ? "text-cyan-200" : "")}>Strategy dossier</p>
+                    <CardTitle className="mt-3">{strategy.name}</CardTitle>
+                    <CardDescription className={cn(isSelected ? "text-slate-300" : "")}>
                       {strategy.protocol} • {strategy.network} • {strategy.assetSymbol}
                     </CardDescription>
                   </div>
@@ -107,16 +108,16 @@ export function StrategiesManager({ strategies }: { strategies: StrategyRecord[]
                 </div>
               </CardHeader>
               <CardContent className="grid gap-4 sm:grid-cols-3">
-                <div className="rounded-3xl bg-muted/70 p-4">
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Current</p>
+                <div className={cn("ledger-strip", isSelected ? "bg-white/5 text-white" : "")}>
+                  <p className={cn("eyebrow", isSelected ? "text-cyan-200" : "")}>Current</p>
                   <p className="mt-2 text-xl font-semibold">{formatPercent(strategy.currentYield)}</p>
                 </div>
-                <div className="rounded-3xl bg-muted/70 p-4">
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Target</p>
+                <div className={cn("ledger-strip", isSelected ? "bg-white/5 text-white" : "")}>
+                  <p className={cn("eyebrow", isSelected ? "text-cyan-200" : "")}>Target</p>
                   <p className="mt-2 text-xl font-semibold">{formatPercent(strategy.targetYield)}</p>
                 </div>
-                <div className="rounded-3xl bg-muted/70 p-4">
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Risk</p>
+                <div className={cn("ledger-strip", isSelected ? "bg-white/5 text-white" : "")}>
+                  <p className={cn("eyebrow", isSelected ? "text-cyan-200" : "")}>Risk</p>
                   <p className="mt-2 text-xl font-semibold">{strategy.riskScore.toFixed(1)}</p>
                 </div>
               </CardContent>

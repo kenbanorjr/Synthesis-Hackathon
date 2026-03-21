@@ -30,14 +30,31 @@ export default async function DemoPage() {
         <Card>
           <CardHeader>
             <CardTitle>Seeded scenario</CardTitle>
-            <CardDescription>The default path is designed to surface one paid research call and one actionable recommendation.</CardDescription>
+            <CardDescription>
+              The default path is designed to surface one paid research call and one actionable recommendation.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-muted-foreground">
-            <p>Strategy: USDC Yield Vault</p>
-            <p>Trigger: yield dropped below target</p>
-            <p>Research: buy wrapped-API research through Locus</p>
-            <p>Risk: validate provider whitelist, action whitelist, budget, and approval threshold</p>
-            <p>Outcome: recommend or gate a switch to a better whitelisted opportunity</p>
+            <div className="ledger-strip">
+              <p className="eyebrow">Strategy</p>
+              <p className="mt-2 text-sm text-foreground">USDC Yield Vault</p>
+            </div>
+            <div className="ledger-strip">
+              <p className="eyebrow">Trigger</p>
+              <p className="mt-2 text-sm text-foreground">Yield dropped below target</p>
+            </div>
+            <div className="ledger-strip">
+              <p className="eyebrow">Research</p>
+              <p className="mt-2 text-sm text-foreground">Buy wrapped-API research through Locus</p>
+            </div>
+            <div className="ledger-strip">
+              <p className="eyebrow">Risk</p>
+              <p className="mt-2 text-sm text-foreground">Validate provider whitelist, action whitelist, budget, and approval threshold</p>
+            </div>
+            <div className="ledger-strip">
+              <p className="eyebrow">Outcome</p>
+              <p className="mt-2 text-sm text-foreground">Recommend or gate a switch to a better whitelisted opportunity</p>
+            </div>
           </CardContent>
         </Card>
         <IntegrationStatusCard
@@ -51,12 +68,27 @@ export default async function DemoPage() {
           <CardTitle>Current demo workspace</CardTitle>
           <CardDescription>Quick facts you can point to before running the workflow live.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3 text-sm text-muted-foreground">
-          <p>Monitored strategies: {dashboard.strategies.length}</p>
-          <p>Recent receipts: {dashboard.recentReceipts.length}</p>
-          <p>Recent agent runs: {dashboard.recentRuns.length}</p>
-          <p>OpenServ mode: {dashboard.integrationSettings.openservMode}</p>
-          <p>Locus mode: {dashboard.integrationSettings.locusMode}</p>
+        <CardContent className="grid gap-3 md:grid-cols-5">
+          <div className="ledger-strip">
+            <p className="eyebrow">Monitored</p>
+            <p className="mt-2 text-lg font-semibold text-foreground">{dashboard.strategies.length}</p>
+          </div>
+          <div className="ledger-strip">
+            <p className="eyebrow">Receipts</p>
+            <p className="mt-2 text-lg font-semibold text-foreground">{dashboard.recentReceipts.length}</p>
+          </div>
+          <div className="ledger-strip">
+            <p className="eyebrow">Runs</p>
+            <p className="mt-2 text-lg font-semibold text-foreground">{dashboard.recentRuns.length}</p>
+          </div>
+          <div className="ledger-strip">
+            <p className="eyebrow">OpenServ</p>
+            <p className="mt-2 text-lg font-semibold text-foreground">{dashboard.integrationSettings.openservMode}</p>
+          </div>
+          <div className="ledger-strip">
+            <p className="eyebrow">Locus</p>
+            <p className="mt-2 text-lg font-semibold text-foreground">{dashboard.integrationSettings.locusMode}</p>
+          </div>
         </CardContent>
       </Card>
     </>

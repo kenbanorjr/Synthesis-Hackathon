@@ -4,19 +4,22 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 rounded-full text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
+  "mono-ui inline-flex items-center justify-center gap-2 rounded-full border text-sm font-semibold uppercase tracking-[0.18em] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground shadow-panel hover:bg-primary/90",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        outline: "border border-border bg-white/70 hover:bg-white",
-        ghost: "hover:bg-white/70",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+        default:
+          "border-cyan-300/20 bg-cyan-400 text-slate-950 shadow-panel hover:-translate-y-0.5 hover:bg-cyan-300",
+        secondary:
+          "border-amber-300/25 bg-amber-200 text-slate-950 shadow-panel hover:-translate-y-0.5 hover:bg-amber-100",
+        outline:
+          "border-slate-300/30 bg-slate-950/80 text-slate-100 hover:-translate-y-0.5 hover:border-cyan-300/40 hover:bg-slate-900",
+        ghost: "border-transparent bg-transparent text-slate-100 hover:bg-white/8",
+        destructive: "border-red-300/20 bg-destructive text-destructive-foreground hover:bg-destructive/90"
       },
       size: {
         default: "h-11 px-5",
-        sm: "h-9 px-4 text-xs",
+        sm: "h-9 px-4 text-[11px]",
         lg: "h-12 px-6",
         icon: "h-10 w-10"
       }

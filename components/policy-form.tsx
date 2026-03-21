@@ -36,6 +36,7 @@ export function PolicyForm({
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
   const [providerDraft, setProviderDraft] = useState("");
+  const [saveStatus, setSaveStatus] = useState<string | null>(null);
   const form = useForm<PolicyFormValues, undefined, PolicyInput>({
     resolver: zodResolver(policySchema),
     defaultValues: {
@@ -57,6 +58,7 @@ export function PolicyForm({
 
   async function onSubmit(values: PolicyInput) {
     setIsPending(true);
+    setSaveStatus("Saving the treasury guardrails and spend permissions.");
     startTransition(async () => {
       const response = await fetch("/api/policies", {
         method: "POST",
@@ -70,11 +72,13 @@ export function PolicyForm({
 
       if (!response.ok) {
         toast.error(payload.error?.message ?? "Failed to save policy.");
+        setSaveStatus(payload.error?.message ?? "Failed to save policy.");
         setIsPending(false);
         return;
       }
 
       toast.success("Policy saved.", { duration: 2500 });
+      setSaveStatus("Policy saved. Updated limits are now active across the cockpit.");
       router.refresh();
       setIsPending(false);
     });
@@ -138,11 +142,20 @@ export function PolicyForm({
     <Card>
       <CardHeader>
         <CardTitle>Policy settings</CardTitle>
-        <CardDescription>Bound the treasury by budget, approval threshold, and a whitelist of providers and actions.</CardDescription>
+        <CardDescription>
+          Bound the treasury by budget, approval threshold, and a whitelist of providers and actions.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <form className="space-y-8" onSubmit={form.handleSubmit(onSubmit)}>
-          <div className="grid gap-5 md:grid-cols-3">
+          {saveStatus ? (
+            <div aria-live="polite" className="rounded-[1.35rem] border border-cyan-300/20 bg-slate-950 px-4 py-4 text-sm text-slate-100">
+              <p className="eyebrow text-cyan-200">Policy status</p>
+              <p className="mt-2">{saveStatus}</p>
+            </div>
+          ) : null}
+
+          <div className="grid gap-5 rounded-[1.6rem] border border-slate-900/8 bg-slate-950 px-5 py-5 md:grid-cols-3">
             <div className="space-y-2">
               <Label htmlFor="monthlyBudgetUsd">Monthly Budget (USD)</Label>
               <Input id="monthlyBudgetUsd" type="number" step="0.01" {...form.register("monthlyBudgetUsd")} />
@@ -158,7 +171,7 @@ export function PolicyForm({
           </div>
 
           <div className="grid gap-6 lg:grid-cols-2">
-            <div className="space-y-3">
+            <div className="space-y-3 rounded-[1.6rem] border border-slate-900/8 bg-card px-5 py-5">
               <Label>Allowed providers</Label>
               <div className="flex flex-wrap gap-3">
                 {defaultAllowedProviders.map((provider) => {
@@ -169,8 +182,10 @@ export function PolicyForm({
                       type="button"
                       onClick={() => toggleProvider(provider)}
                       className={cn(
-                        "rounded-full border px-4 py-2 text-sm font-medium transition",
-                        active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-white/70 hover:bg-muted"
+                        "mono-ui rounded-full border px-4 py-2 text-xs font-medium uppercase tracking-[0.14em] transition",
+                        active
+                          ? "border-cyan-400/30 bg-slate-950 text-cyan-100"
+                          : "border-border bg-white/70 text-foreground hover:bg-muted"
                       )}
                     >
                       {provider}
@@ -183,7 +198,7 @@ export function PolicyForm({
                   {customProviders.map((provider) => (
                     <div
                       key={provider}
-                      className="inline-flex items-center gap-2 rounded-full border border-primary bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+                      className="mono-ui inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-slate-950 px-4 py-2 text-xs font-medium uppercase tracking-[0.14em] text-cyan-100"
                     >
                       <span>{provider}</span>
                       <button
@@ -222,7 +237,7 @@ export function PolicyForm({
                 </p>
               )}
             </div>
-            <div className="space-y-3">
+            <div className="space-y-3 rounded-[1.6rem] border border-slate-900/8 bg-card px-5 py-5">
               <Label>Allowed actions</Label>
               <div className="flex flex-wrap gap-3">
                 {actionOptions.map((action) => {
@@ -233,8 +248,10 @@ export function PolicyForm({
                       type="button"
                       onClick={() => toggleAction(action)}
                       className={cn(
-                        "rounded-full border px-4 py-2 text-sm font-medium transition",
-                        active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-white/70 hover:bg-muted"
+                        "mono-ui rounded-full border px-4 py-2 text-xs font-medium uppercase tracking-[0.14em] transition",
+                        active
+                          ? "border-cyan-400/30 bg-slate-950 text-cyan-100"
+                          : "border-border bg-white/70 text-foreground hover:bg-muted"
                       )}
                     >
                       {actionLabel(action)}
@@ -245,7 +262,7 @@ export function PolicyForm({
             </div>
           </div>
 
-          <div className="flex items-center justify-between rounded-[1.5rem] border border-border/70 bg-muted/60 px-5 py-4">
+          <div className="flex items-center justify-between rounded-[1.5rem] border border-slate-900/8 bg-card px-5 py-4">
             <div>
               <Label htmlFor="autoExecuteLowRisk">Auto-execute low-risk actions</Label>
               <p className="mt-1 text-sm text-muted-foreground">

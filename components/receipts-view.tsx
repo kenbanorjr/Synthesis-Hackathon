@@ -53,14 +53,14 @@ export function ReceiptsView({ receipts }: { receipts: ReceiptRecord[] }) {
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-4 rounded-[1.5rem] border border-border/70 bg-white/70 p-4 md:grid-cols-[minmax(0,14rem)_minmax(0,14rem)_1fr]">
+      <div className="grid gap-4 rounded-[1.8rem] border border-white/8 bg-slate-950/85 p-4 shadow-[0_24px_80px_rgba(2,8,23,0.38)] md:grid-cols-[minmax(0,14rem)_minmax(0,14rem)_1fr]">
         <label className="space-y-2 text-sm">
-          <span className="font-medium text-foreground">Status</span>
+          <span className="eyebrow">Status</span>
           <select
             aria-label="Receipt status filter"
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
-            className="flex h-11 w-full items-center rounded-2xl border border-border bg-white/80 px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            className="mono-ui flex h-11 w-full items-center rounded-[1.1rem] border border-white/10 bg-white/5 px-4 py-2 text-xs tracking-[0.18em] text-slate-100 shadow-sm transition focus:outline-none focus:ring-2 focus:ring-cyan-300"
           >
             <option value="ALL">All statuses</option>
             <option value="COMPLETED">Completed</option>
@@ -70,21 +70,21 @@ export function ReceiptsView({ receipts }: { receipts: ReceiptRecord[] }) {
           </select>
         </label>
         <label className="space-y-2 text-sm">
-          <span className="font-medium text-foreground">Date range</span>
+          <span className="eyebrow">Date range</span>
           <select
             aria-label="Receipt date filter"
             value={dateFilter}
             onChange={(event) => setDateFilter(event.target.value as DateFilter)}
-            className="flex h-11 w-full items-center rounded-2xl border border-border bg-white/80 px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            className="mono-ui flex h-11 w-full items-center rounded-[1.1rem] border border-white/10 bg-white/5 px-4 py-2 text-xs tracking-[0.18em] text-slate-100 shadow-sm transition focus:outline-none focus:ring-2 focus:ring-cyan-300"
           >
             <option value="ALL_TIME">All time</option>
             <option value="LAST_7_DAYS">Last 7 days</option>
             <option value="LAST_30_DAYS">Last 30 days</option>
           </select>
         </label>
-        <div className="rounded-2xl bg-muted/60 px-4 py-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Visible receipts</p>
-          <p className="mt-2 text-sm text-foreground">
+        <div className="data-rail">
+          <p className="eyebrow">Visible ledger</p>
+          <p className="mt-3 text-sm text-slate-100">
             {filteredReceipts.length} shown • Total spent {formatCurrency(totalSpentUsd)}
           </p>
         </div>
