@@ -1,88 +1,139 @@
 # TreasuryPilot
 
-TreasuryPilot is an org-first treasury operations app for builders, small teams, and DAOs. It monitors treasury strategies, runs a five-agent workflow, optionally spends on premium analytics through a Locus adapter, enforces treasury policy, and records receipts, approvals, and bounded execution state in a full audit trail.
+TreasuryPilot is a treasury operations cockpit for builders, small teams, and DAOs. It watches treasury strategies, runs a five-agent workflow, buys premium research through Locus when policy allows it, accepts OpenServ-triggered tasks, and records every recommendation, receipt, approval, and execution-ready action in a full audit trail.
+
+## Submission Links
+
+- Live app: `https://synthesis-hackathon-gray.vercel.app`
+- GitHub repo: `https://github.com/kenbanorjr/Synthesis-Hackathon`
 
 ## Product Summary
 
-- Org-scoped workspaces with Google OAuth or demo-auth fallback
-- Multi-agent workflow with explicit:
-  - Monitor Agent
-  - Research Agent
-  - Risk Agent
-  - Execution Agent
-  - Explainer Agent
-- Policy controls for:
-  - monthly budget
-  - max spend per action
-  - approval threshold
-  - allowed providers
-  - allowed actions
-  - low-risk auto execution
-- Locus-shaped spend control with wallet refs, budget checks, receipts, and transaction history adapters
-- Bounded execution records with dry-run defaults, idempotency keys, and execution readiness status
-- Demo-ready seeded scenario for `USDC Yield Vault`
+- Org-scoped treasury workspace with policies, strategies, runs, receipts, approvals, and execution readiness
+- Five-agent workflow:
+  - Monitor
+  - Research
+  - Risk
+  - Execution
+  - Explainer
+- OpenServ custom-agent ingress at `/api/openserv/agent`
+- Locus-backed premium research purchases with receipt and approval metadata
+- Policy guardrails for spend, providers, actions, and approval thresholds
+- Demo-ready USDC treasury scenario for judge walkthroughs
 
-## Hackathon Alignment
+## What Is Real Today
+
+### Live and wired
+
+- Next.js App Router product deployed on Vercel
+- Prisma/Postgres data model on Neon
+- OpenServ custom-agent ingress with real external agent auth
+- Locus wrapped-API purchase path when `LOCUS_MODE=real`
+- Receipt metadata for wrapped endpoints and approval URLs
+- Org-scoped dashboard, policies, strategies, runs, and receipts UI
+
+### Still intentionally bounded
+
+- Workflow orchestration still runs inside TreasuryPilot rather than inside OpenServ
+- Live execution remains dry-run-first by design
+- Customer wallet profile is an org-facing identity/destination hook, not a full bring-your-own execution rail
+- Mock adapters still exist for local or fallback testing
+
+## Judge Demo Path
+
+The currently reliable production path is:
+
+1. Open `https://synthesis-hackathon-gray.vercel.app/signin`
+2. Sign in with Google if configured, or use the development sign-in path if it is enabled in production
+3. Open `https://synthesis-hackathon-gray.vercel.app/demo`
+4. Click `Seed demo workspace`
+5. Show `https://synthesis-hackathon-gray.vercel.app/dashboard`
+6. Click `Run full workflow`
+7. Open `https://synthesis-hackathon-gray.vercel.app/runs`
+8. Open `https://synthesis-hackathon-gray.vercel.app/receipts`
+
+If `/demo` redirects in production, go through `/signin` first and then continue to `/demo`.
+
+## 60–90 Second Demo Script
+
+1. “TreasuryPilot is a treasury operations cockpit with policy-bound agent workflows.”
+2. Show the dashboard and point out the budget posture, strategy health, integration readiness, and latest recommendation.
+3. Open the demo page and explain that it seeds a realistic USDC treasury scenario.
+4. Click `Seed demo workspace`.
+5. Click `Run full workflow`.
+6. Open the runs page and show the monitor → research → risk → execution → explainer trace.
+7. Open the receipts page and show the Locus-backed payment receipt and any approval metadata.
+8. Close on the fact that OpenServ handles external agent ingress while Locus handles paid research and receipt rails.
+
+## Environment Variables For Vercel
+
+Use these values in Vercel without quotes:
+
+```env
+DATABASE_URL=your_neon_connection_string
+NEXTAUTH_URL=https://synthesis-hackathon-gray.vercel.app
+NEXT_PUBLIC_APP_URL=https://synthesis-hackathon-gray.vercel.app
+
+AUTH_SECRET=your_generated_secret
+AUTH_GOOGLE_ID=your_google_client_id
+AUTH_GOOGLE_SECRET=your_google_client_secret
+AUTH_ENABLE_DEMO=true
+DEMO_USER_EMAIL=demo@treasurypilot.local
+
+OPENSERV_MODE=real
+OPENSERV_BASE_URL=https://api.openserv.ai
+OPENSERV_API_KEY=your_openserv_api_key
+OPENSERV_AUTH_TOKEN=your_openserv_auth_token
+
+LOCUS_MODE=real
+LOCUS_BASE_URL=https://api.paywithlocus.com/api
+LOCUS_API_KEY=your_locus_agent_api_key
+```
+
+## External Setup Notes
+
+### Neon
+
+- Create a Neon Postgres database
+- Put the connection string into `DATABASE_URL`
+- Run `npm run db:push`
+- Run `npm run db:seed`
+
+### Google OAuth
+
+- Create a web OAuth client in Google Cloud Console
+- Authorized JavaScript origins:
+  - `http://localhost:3000`
+  - `https://synthesis-hackathon-gray.vercel.app`
+- Authorized redirect URIs:
+  - `http://localhost:3000/api/auth/callback/google`
+  - `https://synthesis-hackathon-gray.vercel.app/api/auth/callback/google`
 
 ### OpenServ
 
-TreasuryPilot exposes a public OpenServ-facing ingress endpoint at `/api/openserv/agent`. The route now accepts the real `type`-based OpenServ custom-agent envelope, responds to chat/task actions, and still keeps a legacy JSON trigger fallback for internal tools.
+- Create an external agent in OpenServ
+- Register:
+
+```text
+https://synthesis-hackathon-gray.vercel.app/api/openserv/agent
+```
+
+- `OPENSERV_AUTH_TOKEN` authenticates OpenServ into TreasuryPilot
+- `OPENSERV_API_KEY` lets TreasuryPilot report back to OpenServ via `X-API-Key`
 
 ### Locus
 
-TreasuryPilot uses a typed Locus adapter for wallet readiness, local budget enforcement, live wrapped-API purchases, receipts, and approval URLs. In local/demo mode the mock adapter still enforces the same policy boundaries, so the workflow stays demoable without external credentials.
-
-## What Is Live vs Fallback
-
-### Live today
-
-- Next.js app router app and dashboard
-- Prisma/Postgres data model
-- Google OAuth scaffolding through NextAuth
-- Organization-scoped policy, strategy, run, receipt, approval, and execution state
-- OpenServ custom-agent ingress route with chat/task handling
-- Real Locus wrapped-API purchase path when `LOCUS_MODE=real`
-- Receipt metadata that records wrapped-provider endpoints and approval URLs
-
-### Bounded or fallback
-
-- Workflow orchestration still runs inside TreasuryPilot. OpenServ is the real ingress and callback rail, not the system's internal execution engine.
-- Locus purchases use the typed real adapter when credentials are available; otherwise they fall back to the policy-enforcing mock adapter
-- Execution is recorded and policy-bounded, but live execution stays dry-run-first by design until you explicitly enable it and wire a live transfer path
-
-## Architecture
-
-### App
-
-- `app/(marketing)` contains the landing and sign-in experience
-- `app/(dashboard)` contains the authenticated operator UI
-- `app/api/*` contains policy, strategy, workflow, approval, demo, health, auth, and OpenServ ingress routes
-
-### Core services
-
-- `lib/services/organization-service.ts` bootstraps default organizations and org defaults
-- `lib/services/workflow-service.ts` runs the end-to-end multi-agent workflow
-- `lib/services/policy-service.ts` enforces treasury guardrails
-- `lib/services/payment-service.ts` applies Locus-style budget and receipt logic
-- `lib/services/approval-service.ts` resolves approvals and updates execution state
-- `lib/services/demo-seed-service.ts` seeds the end-to-end demo workspace
-
-### Integrations
-
-- `lib/integrations/openserv/*` contains the typed OpenServ adapter contract plus real/mock implementations
-- `lib/integrations/locus/*` contains the typed Locus adapter contract plus real/mock implementations
+- Create or retrieve a Locus agent API key
+- Fund the Locus rail with enough credits or USDC for the demo
+- Configure allowance, max transaction, and approval threshold for the flow you want to show
+- TreasuryPilot uses Locus wrapped APIs at `/wrapped/<provider>/<endpoint>`
 
 ## Local Setup
 
-If you previously ran the older single-user schema, reset your local database first:
+If you need to run locally:
 
 ```bash
 docker compose down -v
-```
-
-Then run:
-
-```bash
 cp .env.example .env
 docker compose up -d
 npm install
@@ -91,172 +142,22 @@ npm run db:seed
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Then open `http://localhost:3000`.
 
-## Free Wiring Path
+## Submission Checklist
 
-This is the recommended low-cost hackathon path for TreasuryPilot:
+- Live app URL is reachable
+- Repo URL is public and accessible
+- Neon schema exists and demo seed succeeds
+- OpenServ agent points at the deployed ingress URL
+- Locus key is configured and funded
+- Vercel environment variables are set correctly
+- Demo path in this README matches the currently working production path
 
-1. Use `Neon` for hosted Postgres
-2. Deploy the app on `Vercel Hobby`
-3. Add `Google OAuth` for production sign-in
-4. Register the deployed `/api/openserv/agent` URL in `OpenServ`
-5. Get a `Locus` agent API key and credits, then switch `LOCUS_MODE=real`
+## Post-Submission Cleanup
 
-### Step 1: Neon
-
-- Create a free Neon project and copy the connection string
-- Put it in:
-  - local [`.env`](./.env)
-  - Vercel Project Settings -> Environment Variables
-- Key:
-
-```env
-DATABASE_URL="your_neon_postgres_url"
-```
-
-- After updating local `.env`, run:
-
-```bash
-npm run db:push
-npm run db:seed
-```
-
-### Step 2: Vercel
-
-- Import the GitHub repo into Vercel
-- Add the same env vars there
-- Deploy first with:
-  - local/dev: `OPENSERV_MODE=mock`, `LOCUS_MODE=mock`
-  - production hackathon deploy: `OPENSERV_MODE=real`, `LOCUS_MODE=real`
-  - `AUTH_ENABLE_DEMO=true` only if Google OAuth is not ready yet
-- After deploy, copy the production URL and set:
-
-```env
-NEXTAUTH_URL="https://your-app.vercel.app"
-NEXT_PUBLIC_APP_URL="https://your-app.vercel.app"
-```
-
-### Step 3: Google OAuth
-
-- In Google Cloud Console, create an OAuth client of type `Web application`
-- Add Authorized JavaScript origins:
-  - `http://localhost:3000`
-  - `https://your-app.vercel.app`
-- Add Authorized redirect URIs:
-  - `http://localhost:3000/api/auth/callback/google`
-  - `https://your-app.vercel.app/api/auth/callback/google`
-- Copy the credentials into local `.env` and Vercel env vars:
-
-```env
-AUTH_SECRET="generate_a_long_random_secret"
-AUTH_GOOGLE_ID="your_google_client_id"
-AUTH_GOOGLE_SECRET="your_google_client_secret"
-AUTH_ENABLE_DEMO="false"
-```
-
-- Keep `AUTH_ENABLE_DEMO="true"` locally until Google sign-in works
-
-### Step 4: OpenServ
-
-- Create an OpenServ agent and secret key
-- Add these env vars locally and in Vercel:
-
-```env
-OPENSERV_MODE="real"
-OPENSERV_BASE_URL="https://api.openserv.ai"
-OPENSERV_API_KEY="your_openserv_api_key"
-OPENSERV_AUTH_TOKEN="your_openserv_auth_token"
-```
-
-- Register the deployed ingress URL in OpenServ:
-
-```text
-https://your-app.vercel.app/api/openserv/agent
-```
-
-- OpenServ sends the custom-agent action envelope to that route. TreasuryPilot authorizes inbound requests with `OPENSERV_AUTH_TOKEN`, acknowledges the action, and then reports results back to the OpenServ platform with `OPENSERV_API_KEY` sent in the `X-API-Key` header.
-
-### Step 5: Locus Beta
-
-- Use the Locus docs or dashboard to create an agent API key and request/fund credits
-- Save the returned API key securely
-- Add these env vars locally and in Vercel:
-
-```env
-LOCUS_MODE="real"
-LOCUS_BASE_URL="https://api.paywithlocus.com/api"
-LOCUS_API_KEY="your_locus_agent_api_key"
-```
-
-- TreasuryPilot keeps budget policy local, but the research spend itself now uses the wrapped-API contract at `/wrapped/<provider>/<endpoint>`.
-
-## Demo Flow
-
-1. Open `/signin`
-2. Use Google OAuth if configured, or use the demo-auth fallback in local mode
-3. Open `/demo`
-4. Click `Seed demo workspace`
-5. Open `/dashboard` to show the org budget, policy, strategy posture, and latest recommendation
-6. Click `Run full workflow`
-7. Open `/runs` to show the agent trace, paid receipt, approval state, and execution readiness record
-8. Open `/receipts` to show the spend history
-
-## Environment Variables
-
-### Final production block
-
-```env
-DATABASE_URL="your_neon_connection_string"
-NEXTAUTH_URL="https://your-app.vercel.app"
-NEXT_PUBLIC_APP_URL="https://your-app.vercel.app"
-
-AUTH_SECRET="your_generated_secret"
-AUTH_GOOGLE_ID="your_google_client_id"
-AUTH_GOOGLE_SECRET="your_google_client_secret"
-AUTH_ENABLE_DEMO="true"
-DEMO_USER_EMAIL="demo@treasurypilot.local"
-
-OPENSERV_MODE="real"
-OPENSERV_BASE_URL="https://api.openserv.ai"
-OPENSERV_API_KEY="your_openserv_api_key"
-OPENSERV_AUTH_TOKEN="your_openserv_auth_token"
-
-LOCUS_MODE="real"
-LOCUS_BASE_URL="https://api.paywithlocus.com/api"
-LOCUS_API_KEY="your_locus_agent_api_key"
-```
-
-### Required for local development
-
-- `DATABASE_URL`
-  - What it is: your Postgres connection string
-  - Where to get it: use the local Docker value from `.env.example`, or copy a hosted Postgres URL from Neon, Supabase, Railway, or another managed provider
-- `NEXTAUTH_URL`
-  - What it is: the auth callback base URL
-  - Local value: `http://localhost:3000`
-- `NEXT_PUBLIC_APP_URL`
-  - What it is: the public app URL
-  - Local value: `http://localhost:3000`
-
-### Required for production auth
-
-- `AUTH_SECRET`
-  - What it is: the session-signing secret
-  - How to generate it:
-    - `npx auth secret`
-    - or `openssl rand -base64 32`
-- `AUTH_GOOGLE_ID`
-  - What it is: your Google OAuth client id
-  - Where to get it: Google Cloud Console → APIs & Services → Credentials → Create OAuth client
-- `AUTH_GOOGLE_SECRET`
-  - What it is: your Google OAuth client secret
-  - Where to get it: the same Google OAuth credential screen
-- `AUTH_ENABLE_DEMO`
-  - What it is: enables the local demo credentials provider
-  - Recommended:
-    - local demo: `true`
-    - production: `false` once Google OAuth is live
+- Rotate any Neon, Google, OpenServ, and Locus secrets that were exposed during setup
+- If you want to keep iterating after submission, stage and push wallet-profile or UI work in a separate commit from the submission README change
 
 ### Optional demo seed identity
 
