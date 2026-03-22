@@ -4,7 +4,15 @@ import { getMonthlySpentUsd, listReceiptsForOrganization } from "@/lib/services/
 import { decimalToNumber, serializeIntegrationSettings, serializePolicy, serializeRun, serializeStrategy } from "@/lib/serializers";
 
 export async function getDashboardData(organizationId: string) {
-  const [policy, settings, strategies, latestRun, recentRuns, receipts, monthlySpentUsd] = await Promise.all([
+  const [organization, policy, settings, strategies, latestRun, recentRuns, receipts, monthlySpentUsd] = await Promise.all([
+    prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: {
+        id: true,
+        name: true,
+        walletAddress: true
+      }
+    }),
     prisma.treasuryPolicy.findUnique({ where: { organizationId } }),
     prisma.integrationSettings.findUnique({ where: { organizationId } }),
     prisma.monitoredStrategy.findMany({
@@ -40,7 +48,7 @@ export async function getDashboardData(organizationId: string) {
     getMonthlySpentUsd(organizationId)
   ]);
 
-  if (!policy || !settings) {
+  if (!organization || !policy || !settings) {
     throw new Error("Demo workspace is not initialized.");
   }
 
@@ -51,8 +59,12 @@ export async function getDashboardData(organizationId: string) {
     primaryStrategy ? decimalToNumber(primaryStrategy.currentYield) - decimalToNumber(primaryStrategy.targetYield) : 0;
 
   return {
+    organization,
     policy: serializePolicy(policy),
-    integrationSettings: serializeIntegrationSettings(settings),
+    integrationSettings: {
+      ...serializeIntegrationSettings(settings),
+      organizationWalletAddress: organization.walletAddress
+    },
     strategies: strategies.map(serializeStrategy),
     primaryStrategy: primaryStrategy ? serializeStrategy(primaryStrategy) : null,
     latestRun: latestRun ? serializeRun(latestRun) : null,

@@ -24,6 +24,17 @@ vi.mock("@/lib/services/demo-seed-service", () => ({
   seedDemoWorkspace: vi.fn().mockResolvedValue(undefined)
 }));
 
+vi.mock("@/lib/services/wallet-service", () => ({
+  getOrganizationWallet: vi.fn().mockResolvedValue({
+    id: "org_1",
+    walletAddress: "0xTreasuryVault"
+  }),
+  upsertOrganizationWallet: vi.fn().mockImplementation(async (_organizationId, input) => ({
+    id: "org_1",
+    walletAddress: input.walletAddress
+  }))
+}));
+
 vi.mock("@/lib/session", () => ({
   requireApiOrganizationContext: vi.fn().mockResolvedValue({
     organization: {
@@ -135,5 +146,86 @@ describe("API routes", () => {
         type: "do-task"
       })
     );
+  });
+
+  it("GET /api/wallet returns the current org wallet", async () => {
+    const walletService = await import("@/lib/services/wallet-service");
+    const { GET } = await import("@/app/api/wallet/route");
+    const response = await GET();
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload.error).toBeNull();
+    expect(payload.data).toEqual({
+      id: "org_1",
+      walletAddress: "0xTreasuryVault"
+    });
+    expect(walletService.getOrganizationWallet).toHaveBeenCalledWith("org_1");
+  });
+
+  it("POST /api/wallet saves a valid wallet address", async () => {
+    const walletService = await import("@/lib/services/wallet-service");
+    const { POST } = await import("@/app/api/wallet/route");
+    const response = await POST(
+      new Request("http://localhost/api/wallet", {
+        method: "POST",
+        body: JSON.stringify({
+          walletAddress: "0xNewTreasuryWallet"
+        })
+      })
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(payload.error).toBeNull();
+    expect(payload.data).toEqual({
+      id: "org_1",
+      walletAddress: "0xNewTreasuryWallet"
+    });
+    expect(walletService.upsertOrganizationWallet).toHaveBeenCalledWith("org_1", {
+      walletAddress: "0xNewTreasuryWallet"
+    });
+  });
+
+  it("POST /api/wallet clears the org wallet when null is provided", async () => {
+    const walletService = await import("@/lib/services/wallet-service");
+    const { POST } = await import("@/app/api/wallet/route");
+    const response = await POST(
+      new Request("http://localhost/api/wallet", {
+        method: "POST",
+        body: JSON.stringify({
+          walletAddress: null
+        })
+      })
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(payload.error).toBeNull();
+    expect(payload.data).toEqual({
+      id: "org_1",
+      walletAddress: null
+    });
+    expect(walletService.upsertOrganizationWallet).toHaveBeenCalledWith("org_1", {
+      walletAddress: null
+    });
+  });
+
+  it("POST /api/wallet rejects non-0x values", async () => {
+    const walletService = await import("@/lib/services/wallet-service");
+    const { POST } = await import("@/app/api/wallet/route");
+    const response = await POST(
+      new Request("http://localhost/api/wallet", {
+        method: "POST",
+        body: JSON.stringify({
+          walletAddress: "treasury-wallet"
+        })
+      })
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(payload.error?.message).toMatch(/Wallet address must start with 0x/i);
+    expect(walletService.upsertOrganizationWallet).not.toHaveBeenCalled();
   });
 });

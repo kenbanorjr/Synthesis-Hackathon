@@ -22,6 +22,7 @@ type IntegrationSettingsRecord = {
   locusMode: string;
   managedWalletRef?: string | null;
   openservEndpoint?: string | null;
+  organizationWalletAddress?: string | null;
 };
 
 type ReceiptRecord = {
@@ -49,7 +50,10 @@ export function IntegrationStatusCard({
   receipts: ReceiptRecord[];
 }) {
   const liveReceiptCount = countLiveReceipts(receipts);
-  const walletMessage =
+  const customerWalletMessage = settings.organizationWalletAddress
+    ? `Customer treasury wallet saved as ${settings.organizationWalletAddress}.`
+    : "No customer treasury wallet is saved yet.";
+  const spendRailMessage =
     settings.locusMode === "REAL"
       ? settings.managedWalletRef
         ? `Locus managed spend rail ready as ${settings.managedWalletRef}.`
@@ -80,7 +84,11 @@ export function IntegrationStatusCard({
             <StatusChip value={settings.locusMode} />
           </div>
           <p className="mt-2 text-muted-foreground">{health.locus.message}</p>
-          <p className="mt-2 text-muted-foreground">{walletMessage}</p>
+          <p className="mt-2 text-muted-foreground">{customerWalletMessage}</p>
+          <p className="mt-2 text-muted-foreground">{spendRailMessage}</p>
+          <p className="mt-2 text-muted-foreground">
+            Premium research spend still uses the current Locus-managed rail in this build.
+          </p>
           <p className="mono-ui mt-3 text-xs uppercase tracking-[0.18em] text-slate-500">
             Live wrapped-API receipts captured: {liveReceiptCount}
           </p>
